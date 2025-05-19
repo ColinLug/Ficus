@@ -651,50 +651,129 @@ function destroySideTab() {
 }
 
 function newTabOnClick(nodeID) {
-  console.log("Salut" + nodeID)
-  
-  destroySideTab()
+  console.log("Affichage des entrées pour le passage : " + nodeID);
 
+  destroySideTab();
 
   const div = document.createElement("div");
-    div.id = "sideTab" ;
-    div.className = "sideTab";
-    document.body.appendChild(div);
+  div.id = "sideTab";
+  div.className = "sideTab";
+  document.body.appendChild(div);
 
-  // À définir sûrement autrement
-  for(tag in OBJ_TEST.working_data[nodeID]["tags"]){
-    let inpGroup = document.createElement("div")
-    inpGroup.className="input-group mb-3"
-    inpGroup.id = `inpGroup${tag}`
-    document.getElementById("sideTab").appendChild(inpGroup)
-    let inpPrepend = document.createElement("div")
-    inpPrepend.id = `inpPrepend${tag}`
-    inpPrepend.className = "input-group-prepend"
-    document.getElementById(`inpGroup${tag}`).appendChild(inpPrepend)
-    let tagName = document.createElement("span")
-    tagName.innerText = tag
-    tagName.className = "input-group-text"
-    document.getElementById(`inpPrepend${tag}`).appendChild(tagName)
-    let tagContent = document.createElement("input")
-    tagContent.id = `inpCore${tag}`
-    tagContent.className = "form-control"
-    tagContent.placeholder = OBJ_TEST.working_data[nodeID]["tags"][tag]["value"]
-    document.getElementById(`inpGroup${tag}`).appendChild(tagContent)
-  }
-  let send_button = document.createElement("button")
-  send_button.innerText="Send data"
-  send_button.addEventListener("click", ()=>{
-    for(tag in OBJ_TEST.working_data[nodeID]["tags"]){
-      if(document.getElementById(`inpCore${tag}`).value!=""){
-        let value = document.getElementById(`inpCore${tag}`).value
-        console.log(document.getElementById(`inpCore${tag}`).value)
-        OBJ_TEST.edit(nodeID, tag, value ,true)
+  // Vérifiez si nodeID existe dans OBJ_TEST.working_data
+  if (OBJ_TEST.working_data[nodeID]) {
+    // Section pour le biome
+    let biomeSection = document.createElement("div");
+    biomeSection.className = "biome-section mb-3";
+    div.appendChild(biomeSection);
+
+    // Ajoutez un titre pour la section du biome
+    let biomeTitle = document.createElement("h2");
+    biomeTitle.innerText = "Biome";
+    biomeSection.appendChild(biomeTitle);
+
+    // Champ pour le biome
+    let biomeGroup = document.createElement("div");
+    biomeGroup.className = "input-group mb-3";
+    biomeGroup.id = `biomeGroup`;
+    biomeSection.appendChild(biomeGroup);
+
+    let biomePrepend = document.createElement("div");
+    biomePrepend.id = `biomePrepend`;
+    biomePrepend.className = "input-group-prepend";
+    biomeGroup.appendChild(biomePrepend);
+
+    let biomeName = document.createElement("span");
+    biomeName.innerText = "Biome";
+    biomeName.className = "input-group-text";
+    biomePrepend.appendChild(biomeName);
+
+    let biomeContent = document.createElement("input");
+    biomeContent.id = `biomeCore`;
+    biomeContent.className = "form-control";
+    biomeContent.value = OBJ_TEST.working_data[nodeID]["tags"]["biomes"]["value"] || "";
+    biomeGroup.appendChild(biomeContent);
+
+    // Ligne séparatrice
+    let separator = document.createElement("hr");
+    div.appendChild(separator);
+
+    // Parcourez toutes les sorties pour le nodeID spécifié
+    for (let i = 0; i < OBJ_TEST.working_data[nodeID]["to"].length; i++) {
+      let sortie = OBJ_TEST.working_data[nodeID]["to"][i];
+
+      // Créez un groupe pour chaque sortie
+      let sortieGroup = document.createElement("div");
+      sortieGroup.className = "sortie-group mb-3";
+      sortieGroup.id = `sortieGroup${i}`;
+      div.appendChild(sortieGroup);
+
+      // Ajoutez un titre pour la sortie
+      let sortieTitle = document.createElement("h3");
+      sortieTitle.innerText = `Sortie ${i + 1}`;
+      sortieGroup.appendChild(sortieTitle);
+
+      // Parcourez les attributs de la sortie
+      for (let attr in sortie) {
+        if (attr !== "sortie" && attr !== "sortie_choix_libre") {
+          let attrGroup = document.createElement("div");
+          attrGroup.className = "input-group mb-3";
+          attrGroup.id = `attrGroup${attr}${i}`;
+          sortieGroup.appendChild(attrGroup);
+
+          let attrPrepend = document.createElement("div");
+          attrPrepend.id = `attrPrepend${attr}${i}`;
+          attrPrepend.className = "input-group-prepend";
+          attrGroup.appendChild(attrPrepend);
+
+          let attrName = document.createElement("span");
+          attrName.innerText = attr;
+          attrName.className = "input-group-text";
+          attrPrepend.appendChild(attrName);
+
+          let attrContent = document.createElement("input");
+          attrContent.id = `attrCore${attr}${i}`;
+          attrContent.className = "form-control";
+          attrContent.value = sortie[attr] || "";
+          attrGroup.appendChild(attrContent);
+        }
       }
     }
-  })
-  document.getElementById("sideTab").appendChild(send_button)
 
+    let send_button = document.createElement("button");
+    send_button.innerText = "Send data";
+    send_button.addEventListener("click", () => {
+      // Mise à jour du biome
+      let biomeInputElement = document.getElementById(`biomeCore`);
+      if (biomeInputElement && biomeInputElement.value !== "") {
+        OBJ_TEST.working_data[nodeID]["tags"]["biomes"]["value"] = biomeInputElement.value;
+      } else {
+        OBJ_TEST.working_data[nodeID]["tags"]["biomes"]["value"] = "";
+      }
+
+      // Mise à jour des attributs des sorties
+      for (let i = 0; i < OBJ_TEST.working_data[nodeID]["to"].length; i++) {
+        for (let attr in OBJ_TEST.working_data[nodeID]["to"][i]) {
+          if (attr !== "sortie" && attr !== "sortie_choix_libre") {
+            let inputElement = document.getElementById(`attrCore${attr}${i}`);
+            if (inputElement && inputElement.value !== "") {
+              OBJ_TEST.working_data[nodeID]["to"][i][attr] = inputElement.value;
+            }
+          }
+        }
+      }
+      console.log("Données mises à jour :", OBJ_TEST.working_data[nodeID]);
+    });
+    div.appendChild(send_button);
+  } else {
+    console.log("Node ID not found in working_data");
+  }
 }
+
+
+
+
+
 
 async function createGraphe(url="A_COPIER_labyrinthe_de_la_mort - template_ldvelh.csv") {
   if (cy_graph) {
