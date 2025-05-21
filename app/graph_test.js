@@ -7,6 +7,7 @@ const BIOMES = []
 SORTIES_INV = ["x","v","p","r"]
 let CSV_OBJ = {}
 let OBJ_TEST
+let changes_bool = false
 
 class passageTag{
   constructor({height, width}={}) {
@@ -36,16 +37,17 @@ class Data{
   /**
    * Used for editing a certain part of the working_data dict
    * @param {String} target 
-   * @param {String} variable 
+   * @param {Array} variable 
    * @param {String} value 
    * @param {Boolean} flood 
    */
   edit(target, variable, value, flood=false){
+    changes_bool = true
     if(flood){
-      this.working_data[target]["tags"][variable]["value"] = value
-      this.working_data[target]["tags"][variable]["entry"] = true
+      this.working_data[target]["tags"][variable[0]]["value"] = value
+      this.working_data[target]["tags"][variable[0]]["entry"] = true
     }else{
-      this.working_data[target]["sorties"][variable] = value
+      this.working_data[target]["to"][variable[0]][variable[1]] = value
     }
   }
 
@@ -199,6 +201,7 @@ class Data{
    * @returns 
    */
   async import(filename){
+    changes_bool = true
     try {
       let response = await fetch(filename);
   
@@ -230,7 +233,7 @@ class Data{
     }
   }
 
-  toJSON(){
+  toJSONFile(){
     let json_table = {
       nom: this.entry_csv_name.split('.')[0],
       liste_notes:[],
@@ -362,7 +365,15 @@ class Data{
     link.textContent = 'Click to Download'
     
     return link
-    
+  }
+  toLocalStorage(){
+    let save_obj = {}
+    for(let key in this){
+      if(this.hasOwnProperty(key) && typeof this[key] !== 'function'){
+        save_obj[key]=this[key]
+      }
+    }
+    return save_obj
   }
 }
 // cytoscape.js ne permet pas de créer un héritage...
@@ -746,9 +757,9 @@ function newTabOnClick(nodeID) {
       // Mise à jour du biome
       let biomeInputElement = document.getElementById(`biomeCore`);
       if (biomeInputElement && biomeInputElement.value !== "") {
-        OBJ_TEST.working_data[nodeID]["tags"]["biomes"]["value"] = biomeInputElement.value;
+        OBJ_TEST.edit(nodeID, ["biomes"], biomeInputElement.value, true);
       } else {
-        OBJ_TEST.working_data[nodeID]["tags"]["biomes"]["value"] = "";
+        OBJ_TEST.edit(nodeID, ["biomes"], "", true);
       }
 
       // Mise à jour des attributs des sorties
@@ -757,7 +768,7 @@ function newTabOnClick(nodeID) {
           if (attr !== "sortie" && attr !== "sortie_choix_libre") {
             let inputElement = document.getElementById(`attrCore${attr}${i}`);
             if (inputElement && inputElement.value !== "") {
-              OBJ_TEST.working_data[nodeID]["to"][i][attr] = inputElement.value;
+              OBJ_TEST.edit(nodeID, [i,attr], inputElement.value, false);
             }
           }
         }
@@ -775,32 +786,36 @@ function newTabOnClick(nodeID) {
 
 
 
-async function createGraphe(url="A_COPIER_labyrinthe_de_la_mort - template_ldvelh.csv") {
-  if (cy_graph) {
-    cy_graph.destroy()
-    cy_graph = null;
-  }
-  await new Promise(resolve => {
-    if (document.readyState === 'complete') {
-        resolve();
-    } else {
-        document.addEventListener('DOMContentLoaded', resolve);
+async function createGraphe(url=null) {
+  if(url){
+    if (cy_graph) {
+      cy_graph.destroy()
+      cy_graph = null;
     }
-  });
-
-  // Libérer la mémoire
-  CSV_OBJ = {};
-  BIOMES.length = 0;
-  await OBJ_TEST.import(url)
-  console.log(OBJ_TEST.working_data)
-  cy_list = await createCyElementsFromDico(OBJ_TEST.working_data)
-  console.log(cy_list)
-  OBJ_TEST.working_data["162"]["tags"]["biomes"]={"value":"océan","entry":true}
-  OBJ_TEST.working_data["250"]["tags"]["biomes"]={"value":"vallée","entry":true}
-  OBJ_TEST.working_data["87"]["tags"]["biomes"]={"value":"glace","entry":true}
-  OBJ_TEST.working_data["301"]["tags"]["biomes"]={"value":"chemin","entry":true}
-  OBJ_TEST.working_data["402"]["tags"]["biomes"]={"value":"château","entry":true}
-  OBJ_TEST.working_data["53"]["tags"]["biomes"]={"value":"marais","entry":true}
+    await new Promise(resolve => {
+      if (document.readyState === 'complete') {
+          resolve();
+      } else {
+          document.addEventListener('DOMContentLoaded', resolve);
+      }
+    });
+  
+    // Libérer la mémoire
+    CSV_OBJ = {};
+    BIOMES.length = 0;
+    await OBJ_TEST.import(url)
+    console.log(OBJ_TEST.working_data)
+    cy_list = await createCyElementsFromDico(OBJ_TEST.working_data)
+    console.log(cy_list)
+    OBJ_TEST.working_data["162"]["tags"]["biomes"]={"value":"océan","entry":true}
+    OBJ_TEST.working_data["250"]["tags"]["biomes"]={"value":"vallée","entry":true}
+    OBJ_TEST.working_data["87"]["tags"]["biomes"]={"value":"glace","entry":true}
+    OBJ_TEST.working_data["301"]["tags"]["biomes"]={"value":"chemin","entry":true}
+    OBJ_TEST.working_data["402"]["tags"]["biomes"]={"value":"château","entry":true}
+    OBJ_TEST.working_data["53"]["tags"]["biomes"]={"value":"marais","entry":true}
+  }else{
+    cy_list = await createCyElementsFromDico(OBJ_TEST.working_data)
+  }
   
   //console.log(exportCSV(CSV_OBJ))
   cy_graph = cytoscape({
@@ -1015,4 +1030,25 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 OBJ_TEST = new Data()
-createGraphe("pirate_des_sept_mers.csv")
+// createGraphe("pirate_des_sept_mers.csv")
+setInterval(() => {
+  if(changes_bool){
+    changes_bool = false
+    localStorage.setItem('autosave', JSON.stringify(OBJ_TEST.toLocalStorage()));
+    console.log("Sauvegarde automatique effectuée.")
+  }
+}, 10000);
+let saved_data;
+try {
+  saved_data = JSON.parse(localStorage.getItem('autosave'));
+} catch (e) {
+  console.error("Erreur de lecture des données", e);
+  saved_data = null;
+}
+if (saved_data) {
+  for(let key in saved_data){
+    OBJ_TEST[key] = saved_data[key]
+  }
+  console.log(OBJ_TEST.working_data)
+  createGraphe(null);
+}
