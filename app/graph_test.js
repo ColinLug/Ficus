@@ -709,20 +709,40 @@ function newTabOnClick(nodeID) {
     let separator = document.createElement("hr");
     div.appendChild(separator);
 
+    // Créez les onglets pour les sorties
+    let tabContainer = document.createElement("div");
+    tabContainer.className = "container mt-3";
+
+    // Créez les liens des onglets
+    let tabList = document.createElement("ul");
+    tabList.className = "nav nav-tabs";
+    tabList.id = "sortieTabs";
+
+    // Créez le contenu des onglets
+    let tabContent = document.createElement("div");
+    tabContent.className = "tab-content";
+
     // Parcourez toutes les sorties pour le nodeID spécifié
     for (let i = 0; i < OBJ_TEST.working_data[nodeID]["to"].length; i++) {
       let sortie = OBJ_TEST.working_data[nodeID]["to"][i];
 
-      // Créez un groupe pour chaque sortie
-      let sortieGroup = document.createElement("div");
-      sortieGroup.className = "sortie-group mb-3";
-      sortieGroup.id = `sortieGroup${i}`;
-      div.appendChild(sortieGroup);
+      // Créez un lien pour chaque onglet
+      let tabLink = document.createElement("li");
+      tabLink.className = "nav-item";
 
-      // Ajoutez un titre pour la sortie
-      let sortieTitle = document.createElement("h3");
-      sortieTitle.innerText = `Sortie ${i + 1}`;
-      sortieGroup.appendChild(sortieTitle);
+      let tabAnchor = document.createElement("a");
+      tabAnchor.className = "nav-link" + (i === 0 ? " active" : "");
+      tabAnchor.setAttribute("data-toggle", "tab");
+      tabAnchor.href = "#sortie" + i;
+      tabAnchor.innerText = "Sortie " + (i + 1);
+
+      tabLink.appendChild(tabAnchor);
+      tabList.appendChild(tabLink);
+
+      // Créez le contenu de chaque onglet
+      let tabPane = document.createElement("div");
+      tabPane.className = "tab-pane fade" + (i === 0 ? " show active" : "");
+      tabPane.id = "sortie" + i;
 
       // Parcourez les attributs de la sortie
       for (let attr in sortie) {
@@ -730,7 +750,7 @@ function newTabOnClick(nodeID) {
           let attrGroup = document.createElement("div");
           attrGroup.className = "input-group mb-3";
           attrGroup.id = `attrGroup${attr}${i}`;
-          sortieGroup.appendChild(attrGroup);
+          tabPane.appendChild(attrGroup);
 
           let attrPrepend = document.createElement("div");
           attrPrepend.id = `attrPrepend${attr}${i}`;
@@ -749,7 +769,13 @@ function newTabOnClick(nodeID) {
           attrGroup.appendChild(attrContent);
         }
       }
+
+      tabContent.appendChild(tabPane);
     }
+
+    tabContainer.appendChild(tabList);
+    tabContainer.appendChild(tabContent);
+    div.appendChild(tabContainer);
 
     let send_button = document.createElement("button");
     send_button.innerText = "Send data";
@@ -780,6 +806,7 @@ function newTabOnClick(nodeID) {
     console.log("Node ID not found in working_data");
   }
 }
+
 
 
 
