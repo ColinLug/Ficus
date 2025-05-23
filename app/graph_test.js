@@ -863,6 +863,109 @@ function newTabOnClick(nodeID) {
 
       tabContent.appendChild(tabPane);
     }
+    // Onglet "+"
+    let addTabLink = document.createElement("li");
+    addTabLink.className = "nav-item";
+
+    let addTabAnchor = document.createElement("a");
+    addTabAnchor.className = "nav-link";
+    addTabAnchor.href = "#";
+    addTabAnchor.innerText = "+";
+    addTabAnchor.style.fontWeight = "bold";
+    
+    // Let add a new exit on click (copy the exit's attributes from an other existing exit)
+    addTabAnchor.addEventListener("click", function () {
+      let input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Sortie vers n°...?";
+      input.className = "form-control form-control-sm";
+      input.style.width = "150px";
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          const sortieID = input.value.trim();
+          if (!sortieID) return;
+          cy_graph.add([{group:"edges", data: {id:`e${nodeID}-${sortieID}`, source:nodeID, target:sortieID}}])
+    
+          const newIndex = OBJ_TEST.working_data[nodeID]["to"].length;
+          let sortie_obj = {}
+          if(OBJ_TEST.working_data[nodeID]["to"].length > 0){
+            for(let attr in OBJ_TEST.working_data[nodeID]["to"][0]){
+              sortie_obj[attr]=""
+            }
+          }else{
+            for(let attr in OBJ_TEST.working_data[Object.keys(OBJ_TEST.working_data)[0]]["to"][0]){
+              sortie_obj[attr]=""
+            }
+          }
+          sortie_obj["sortie"]=sortieID
+          OBJ_TEST.working_data[nodeID]["to"].push(sortie_obj);
+    
+          // Remplacer l'input par un nouvel onglet
+          let newTabLink = document.createElement("li");
+          newTabLink.className = "nav-item";
+    
+          let newTabAnchor = document.createElement("a");
+          newTabAnchor.className = "nav-link active";
+          newTabAnchor.setAttribute("data-toggle", "tab");
+          newTabAnchor.innerText = "Sortie " + sortieID;
+          newTabAnchor.addEventListener("click", function () {
+            tabList.querySelectorAll(".nav-link").forEach(link => link.classList.remove("active"));
+            tabContent.querySelectorAll(".tab-pane").forEach(pane => pane.classList.remove("show", "active"));
+            newTabAnchor.classList.add("active");
+            newTabPane.classList.add("show", "active");
+          });
+    
+          newTabLink.appendChild(newTabAnchor);
+          tabList.insertBefore(newTabLink, addTabLink);
+    
+          // Créer le contenu du nouvel onglet
+          let newTabPane = document.createElement("div");
+          newTabPane.className = "tab-pane fade show active";
+          newTabPane.id = "sortie" + newIndex;
+          for (let attr in OBJ_TEST.working_data[nodeID]["to"][newIndex]) {
+            if (attr !== "sortie" && attr !== "sortie_choix_libre") {
+              let attrGroup = document.createElement("div");
+              attrGroup.className = "input-group mb-3";
+              attrGroup.id = `attrGroup${attr}${newIndex}`;
+              newTabPane.appendChild(attrGroup);
+    
+              let attrPrepend = document.createElement("div");
+              attrPrepend.id = `attrPrepend${attr}${newIndex}`;
+              attrPrepend.className = "input-group-prepend";
+              attrGroup.appendChild(attrPrepend);
+    
+              let attrName = document.createElement("span");
+              attrName.innerText = attr;
+              attrName.className = "input-group-text";
+              attrPrepend.appendChild(attrName);
+    
+              let attrContent = document.createElement("input");
+              attrContent.id = `attrCore${attr}${newIndex}`;
+              attrContent.className = "form-control";
+              attrContent.value = OBJ_TEST.working_data[nodeID]["to"][newIndex][attr] || "";
+              attrGroup.appendChild(attrContent);
+            }
+          }
+          tabContent.appendChild(newTabPane);
+          // Activer le nouvel onglet
+          tabList.querySelectorAll(".nav-link").forEach(link => link.classList.remove("active"));
+          tabContent.querySelectorAll(".tab-pane").forEach(pane => pane.classList.remove("show", "active"));
+          newTabAnchor.classList.add("active");
+          newTabPane.classList.add("show", "active");
+    
+          // Réafficher le bouton "+"
+          addTabAnchor.innerText = "+";
+        }
+      });
+    
+      // Remplacer le "+" par l'input
+      addTabAnchor.innerText = "";
+      addTabAnchor.appendChild(input);
+      input.focus();
+    });
+
+    addTabLink.appendChild(addTabAnchor);
+    tabList.appendChild(addTabLink);
 
     tabContainer.appendChild(tabList);
     tabContainer.appendChild(tabContent);
