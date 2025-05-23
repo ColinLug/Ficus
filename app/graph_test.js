@@ -678,8 +678,35 @@ function createSampleCy(){
 
 function destroySideTab() {
   const element = document.getElementById("sideTab");
-  if (element) {
-    element.remove();
+  if(element){
+    let nodeID = element.nodeID
+  }
+  let interv = setInterval(() => {
+    if (element && nodeID) {
+      element.remove();
+      clearInterval(interv)
+    }
+  }, 20);
+  if(element){
+    let biomeInputElement = document.getElementById(`biomeCore`);
+    if (biomeInputElement && biomeInputElement.value !== "") {
+      OBJ_TEST.edit(nodeID, ["biomes"], biomeInputElement.value, true);
+    } else {
+      OBJ_TEST.edit(nodeID, ["biomes"], "", true);
+    }
+
+    // Mise à jour des attributs des sorties
+    for (let i = 0; i < OBJ_TEST.working_data[nodeID]["to"].length; i++) {
+      for (let attr in OBJ_TEST.working_data[nodeID]["to"][i]) {
+        if (attr !== "sortie" && attr !== "sortie_choix_libre") {
+          let inputElement = document.getElementById(`attrCore${attr}${i}`);
+          if (inputElement && inputElement.value !== "") {
+            OBJ_TEST.edit(nodeID, [i,attr], inputElement.value, false);
+          }
+        }
+      }
+    }
+    console.log("Données mises à jour :", OBJ_TEST.working_data[nodeID]);
   }
 }
 
@@ -689,12 +716,24 @@ function newTabOnClick(nodeID) {
   destroySideTab();
 
   const div = document.createElement("div");
+  div.nodeID=nodeID
   div.id = "sideTab";
   div.className = "sideTab";
   document.body.appendChild(div);
 
   // Vérifiez si nodeID existe dans OBJ_TEST.working_data
   if (OBJ_TEST.working_data[nodeID]) {
+    let text_div = document.createElement("div")
+    text_div.className = "mb-3 text-group"
+    div.appendChild(text_div)
+    let text_title = document.createElement("h2")
+    text_title.innerText = "Texte du passage"
+    text_div.appendChild(text_title)
+    let text_p = document.createElement("p")
+    text_p.innerText = OBJ_TEST.working_data[nodeID].text
+    text_p.id = "text"
+    text_div.appendChild(text_p)
+
     // Section pour le biome
     let biomeSection = document.createElement("div");
     biomeSection.className = "biome-section mb-3";
@@ -755,8 +794,25 @@ function newTabOnClick(nodeID) {
       let tabAnchor = document.createElement("a");
       tabAnchor.className = "nav-link" + (i === 0 ? " active" : "");
       tabAnchor.setAttribute("data-toggle", "tab");
-      tabAnchor.href = "#sortie" + i;
       tabAnchor.innerText = "Sortie " + (i + 1);
+      tabAnchor.addEventListener("click", function() {
+        // Masquez tous les contenus d'onglets
+        let tabPanes = tabContent.querySelectorAll(".tab-pane");
+        tabPanes.forEach(function(pane) {
+          pane.classList.remove("show", "active");
+        });
+
+        // Affichez le contenu de l'onglet cliqué
+        let tabPane = document.getElementById("sortie" + i);
+        tabPane.classList.add("show", "active");
+
+        // Mettez à jour l'état actif des liens d'onglets
+        let tabLinks = tabList.querySelectorAll(".nav-link");
+        tabLinks.forEach(function(link) {
+          link.classList.remove("active");
+        });
+        this.classList.add("active");
+      });
 
       tabLink.appendChild(tabAnchor);
       tabList.appendChild(tabLink);
@@ -829,6 +885,7 @@ function newTabOnClick(nodeID) {
     console.log("Node ID not found in working_data");
   }
 }
+
 
 
 
@@ -958,6 +1015,10 @@ cy_graph.on('click', function(event) {
 
         console.log("Cacher la sideTab");
         destroySideTab();
+
+        
+        
+        
     }
 });
 

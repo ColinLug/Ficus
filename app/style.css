@@ -63,7 +63,20 @@ body {
 .d-flex{
   border: none;
 }
-
+#text{
+  font-size: clamp(10px, 1.5vw, 14.5px);
+  text-align: justify !important;
+  text-justify: inter-word !important;
+  line-height: 1.25;
+  padding: 1rem;
+  background-color: #e6ffe9;
+  border: 2px solid;
+  border-color: black;
+  border-radius: 8px;
+  width: 100%;
+  align-self: stretch;
+  flex-shrink: 0;
+}
 
 
 
@@ -72,7 +85,7 @@ body {
   position: fixed;
   top: 0;
   right: 0;
-  width: 25vw;
+  width: 35vw;
   /* 25% de la largeur de l'écran */
   height: 100vh;
   /* Prend toute la hauteur de l'écran */
@@ -83,6 +96,9 @@ body {
   overflow-y: auto;
   /* Active le défilement vertical */
 
+}
+.text-group{
+  background-color: #e6ffe9;
 }
 .biome-section{
   background-color: #e6ffe9;
