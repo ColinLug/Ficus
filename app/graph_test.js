@@ -2,12 +2,12 @@
 // Changer un tag d'un passage viendrait à changer tous les autres
 // const TAGS = {"biomes":"", "personnages":"", "actions":""}
 let cy_graph = null
-let LAST_DEFAULT_TAG = 31  //the number of default columns
-const BIOMES = []
+const TAG_VALUES = {}
 SORTIES_INV = ["x","v","p","r"]
 let CSV_OBJ = {}
 let OBJ_TEST
 let changes_bool = false
+let CURR_TAG_NAME = "biomes"
 
 class passageTag{
   constructor({height, width}={}) {
@@ -580,48 +580,70 @@ function initNodeSearch() {
   }
 }
 
-function lancerPropagation(passage_dico){
-  // A modifier pour passer tout en false les propas
-  function propagation(passage_dico, passage, biome){
-    if (!(BIOMES.includes(biome))){
-      BIOMES.push(biome)
+
+function lancerPropagation(passage_dico, tag_name) {
+  // Initialiser les valeurs si elles n'existent pas
+  if (!TAG_VALUES[tag_name]) {
+    TAG_VALUES[tag_name] = [];
+  }
+
+  const visited = new Set();
+
+  function propagation(passage_dico, passage, value, tag_name) {
+    // Ajouter la valeur au tableau spécifique si elle n'y est pas
+    if (!TAG_VALUES[tag_name].includes(value)) {
+      TAG_VALUES[tag_name].push(value);
     }
-    let to_list = passage_dico[String(passage)]["to"]
-    passage_dico[String(passage)]["tags"]["biomes"]["value"]=biome
-    visited.add(passage)
-    requestAnimationFrame(()=>{
-      cy_graph.nodes(`#${passage}`).style('background-color', `hsl(${(BIOMES.indexOf(biome)*25)%360}, 70%, ${(65-((Math.round(BIOMES.indexOf(biome)/15)*22))%88 +88)%88}%)`); // Couleur à modifier?
-      //cy_graph.nodes(`#${passage}`).style('background-color', `hsl(${(BIOMES.indexOf(biome)*30)%255}, 70%, 65%)`); anciennes couleurs
-    })
-    for(let i = 0; i < to_list.length; i++){
-      if(!SORTIES_INV.includes(to_list[i]["sortie"]) && !passage_dico[to_list[i]["sortie"]]["tags"]["biomes"]["entry"] && !visited.has(to_list[i]["sortie"]) ){
-        propagation(passage_dico, to_list[i]["sortie"], biome)
+
+    const to_list = passage_dico[String(passage)]["to"];
+    passage_dico[String(passage)]["tags"][tag_name]["value"] = value;
+    visited.add(passage);
+
+    // Génération de couleur basée sur la position de la valeur dans la liste du tag
+    const index = TAG_VALUES[tag_name].indexOf(value);
+    const hue = (index * 25) % 360;
+    const light = (65 - ((Math.floor(index / 15) * 22)) % 88 + 88) % 88;
+
+    requestAnimationFrame(() => {
+      cy_graph.nodes(`#${passage}`).style(
+        'background-color',
+        `hsl(${hue}, 70%, ${light}%)`
+      );
+    });
+
+    for (let i = 0; i < to_list.length; i++) {
+      const nextId = to_list[i]["sortie"];
+      if (
+        !SORTIES_INV.includes(nextId) &&
+        !passage_dico[nextId]["tags"][tag_name]["entry"] &&
+        !visited.has(nextId)
+      ) {
+        propagation(passage_dico, nextId, value, tag_name);
       }
     }
   }
+
   const entries = Object.keys(passage_dico)
-    .filter(key => passage_dico[key].tags?.biomes?.entry)
-    .map(key => ({ id: key, biome: passage_dico[key].tags.biomes.value }));
+    .filter(key =>
+      tag_name &&
+      passage_dico[key]?.tags &&
+      passage_dico[key].tags[tag_name]?.entry
+    )
+    .map(key => ({
+      id: key,
+      value: passage_dico[key].tags[tag_name]?.value
+    }));
 
-  const uniqueBiomes = new Set(BIOMES);
-  const visited = new Set()
-  requestAnimationFrame(()=>{
+  requestAnimationFrame(() => {
     entries.forEach(entry => {
-      if (!uniqueBiomes.has(entry.biome)) {
-        uniqueBiomes.add(entry.biome);
-        BIOMES.push(entry.biome);
+      // Ajout éventuel à la liste de valeurs
+      if (!TAG_VALUES[tag_name].includes(entry.value)) {
+        TAG_VALUES[tag_name].push(entry.value);
+        console.log(`Propagation de la valeur ${entry.value} pour ${tag_name}`);
       }
-      console.log(`Propagation du biome ${entry.biome}`)
-      propagation(passage_dico, entry.id, entry.biome);
-    })
-  })
-
-
-  // for(id in entries){
-  //   console.log(`Propagation du biome ${entries[id]}`)
-  //   propagation(passage_dico, id, entries[id])
-  // }
-  // return new Promise((resolve)=>{resolve()})
+      propagation(passage_dico, entry.id, entry.value, tag_name);
+    });
+  });
 }
 
 function createCyElementsFromDico(dico){
@@ -779,6 +801,7 @@ function newTabOnClick(nodeID) {
 
     let send_button = document.createElement("button");
     send_button.innerText = "Send data";
+    send_button.className = "btn btn-primary send-btn"
     send_button.addEventListener("click", () => {
       // Mise à jour du biome
       let biomeInputElement = document.getElementById(`biomeCore`);
@@ -811,8 +834,11 @@ function newTabOnClick(nodeID) {
 
 
 
-
-
+/**
+ * 
+ * @param {String} url 
+ * @returns 
+ */
 async function createGraphe(url=null) {
   if(url){
     if (cy_graph) {
@@ -829,7 +855,6 @@ async function createGraphe(url=null) {
   
     // Libérer la mémoire
     CSV_OBJ = {};
-    BIOMES.length = 0;
     await OBJ_TEST.import(url)
     console.log(OBJ_TEST.working_data)
     cy_list = await createCyElementsFromDico(OBJ_TEST.working_data)
@@ -855,7 +880,7 @@ async function createGraphe(url=null) {
       {
         selector: 'node',
         style: {
-          'background-color': '#FFFACD', // Couleur temporaire
+          'background-color': '#9cbeb4', // Couleur temporaire
           'border-width':'1',
           'border-color': 'black',
           'border-opacity':'1',
@@ -956,7 +981,7 @@ cy_graph.on('click', function(event) {
   return new Promise(async (resolve)=>{
     progressBar.style.width = "64%";
     progressBar.innerHTML = "64%"
-    await lancerPropagation(OBJ_TEST.working_data)
+    await lancerPropagation(OBJ_TEST.working_data, CURR_TAG_NAME)
     initNodeSearch()
     resolve()
   })
@@ -973,12 +998,29 @@ document.addEventListener("DOMContentLoaded", function () {
   let pdfInput = document.getElementById("pdfFile");
   const progress = document.querySelector(".progress");
   const progressBar = document.querySelector(".progress-bar");
-  const numInput = document.getElementById("csvColumns");
   const refreshBtn = document.getElementById("refreshBtn")
   const downloadCSVButton = document.getElementById('downloadCSV');
+  const leftArr = document.querySelector(".svg-arrow-left");
+  const rightArr = document.querySelector(".svg-arrow");
 
   let importedCSV = null; // Variable pour stocker le fichier CSV
 
+  leftArr.addEventListener("click", () => {
+    let tags_array = Object.keys(OBJ_TEST.working_data[1]["tags"])
+    let current_tag = propaBtn.innerText.match(/(?<=Propager[ ])\w+/g)[0]
+    let curr_index = tags_array.indexOf(current_tag)
+    let new_index = (curr_index - 1 + tags_array.length)%tags_array.length
+    propaBtn.innerText = `Propager ${tags_array[new_index]}`
+    CURR_TAG_NAME = tags_array[new_index]
+  });
+  rightArr.addEventListener("click", () => {
+    let tags_array = Object.keys(OBJ_TEST.working_data[1]["tags"])
+    let current_tag = propaBtn.innerText.match(/(?<=Propager[ ])\w+/g)[0]
+    let curr_index = tags_array.indexOf(current_tag)
+    let new_index = (curr_index + 1 + tags_array.length)%tags_array.length
+    propaBtn.innerText = `Propager ${tags_array[new_index]}`
+    CURR_TAG_NAME = tags_array[new_index]
+  });
   downloadCSVButton.addEventListener('click', () => {
     let link = OBJ_TEST.export();  // Simuler le clic sur le lien pour télécharger
     link.click()
@@ -989,7 +1031,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
   propaBtn.addEventListener("click",()=>{
-    lancerPropagation(OBJ_TEST.working_data)
+    console.log(CURR_TAG_NAME)
+    cy_graph.nodes().style('background-color', '#9cbeb4');
+    lancerPropagation(OBJ_TEST.working_data, CURR_TAG_NAME)
   })
   refreshBtn.addEventListener("click",()=>{
     refresh()
@@ -1012,7 +1056,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   fileInput.addEventListener("change", (event) => {
-    LAST_DEFAULT_TAG = numInput.value
     isImportating = true
       const file = event.target.files[0]; // Récupérer le fichier sélectionné
       progressBar.style.width = "17%";
@@ -1049,6 +1092,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Fichier PDF chargé :", importedPDF, file.name);
         setTimeout(() => {
           OBJ_TEST.import(file.name)
+          isImportating = false
         }, 100);
       } else {
           alert("Veuillez sélectionner un fichier PDF valide !");
@@ -1058,6 +1102,8 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 OBJ_TEST = new Data()
 // createGraphe("pirate_des_sept_mers.csv")
+
+// Intervalle permettant de sauvegarder automatiquement le projet
 setInterval(() => {
   if(changes_bool){
     changes_bool = false
@@ -1065,6 +1111,8 @@ setInterval(() => {
     console.log("Sauvegarde automatique effectuée.")
   }
 }, 10000);
+
+// Initialise les données en fonction du cache
 let saved_data;
 try {
   saved_data = JSON.parse(localStorage.getItem('autosave'));
