@@ -1006,7 +1006,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let importedCSV = null; // Variable pour stocker le fichier CSV
 
   leftArr.addEventListener("click", () => {
-    let tags_array = Object.keys(OBJ_TEST.working_data[1]["tags"])
+    let tags_array = Object.keys(OBJ_TEST.working_data[Object.keys(OBJ_TEST.working_data)[0]]["tags"])
     let current_tag = propaBtn.innerText.match(/(?<=Propager[ ])\w+/g)[0]
     let curr_index = tags_array.indexOf(current_tag)
     let new_index = (curr_index - 1 + tags_array.length)%tags_array.length
@@ -1014,7 +1014,7 @@ document.addEventListener("DOMContentLoaded", function () {
     CURR_TAG_NAME = tags_array[new_index]
   });
   rightArr.addEventListener("click", () => {
-    let tags_array = Object.keys(OBJ_TEST.working_data[1]["tags"])
+    let tags_array = Object.keys(OBJ_TEST.working_data[Object.keys(OBJ_TEST.working_data)[0]]["tags"])
     let current_tag = propaBtn.innerText.match(/(?<=Propager[ ])\w+/g)[0]
     let curr_index = tags_array.indexOf(current_tag)
     let new_index = (curr_index + 1 + tags_array.length)%tags_array.length
