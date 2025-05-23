@@ -783,10 +783,6 @@ function newTabOnClick(nodeID) {
     let separator = document.createElement("hr");
     div.appendChild(separator);
 
-    // Créez les onglets pour les sorties
-    let tabContainer = document.createElement("div");
-    tabContainer.className = "container mt-3";
-
     // Créez les liens des onglets
     let tabList = document.createElement("ul");
     tabList.className = "nav nav-tabs";
@@ -802,30 +798,34 @@ function newTabOnClick(nodeID) {
 
       // Créez un lien pour chaque onglet
       let tabLink = document.createElement("li");
-      tabLink.className = "nav-item";
+      tabLink.className = "nav-item d-flex align-items-center";
 
       let tabAnchor = document.createElement("a");
       tabAnchor.className = "nav-link" + (i === 0 ? " active" : "");
       tabAnchor.setAttribute("data-toggle", "tab");
       tabAnchor.innerText = "Sortie " + (OBJ_TEST.working_data[nodeID]["to"][i]["sortie"]);
-      tabAnchor.addEventListener("click", function() {
+      tabAnchor.addEventListener("click", function () {
         // Masquez tous les contenus d'onglets
         let tabPanes = tabContent.querySelectorAll(".tab-pane");
-        tabPanes.forEach(function(pane) {
-          pane.classList.remove("show", "active");
-        });
-
+        tabPanes.forEach(pane => pane.classList.remove("show", "active"));
+      
         // Affichez le contenu de l'onglet cliqué
         let tabPane = document.getElementById("sortie" + i);
         tabPane.classList.add("show", "active");
-
-        // Mettez à jour l'état actif des liens d'onglets
-        let tabLinks = tabList.querySelectorAll(".nav-link");
-        tabLinks.forEach(function(link) {
-          link.classList.remove("active");
+      
+        // Mettez à jour l'état actif des liens d'onglets et des croix
+        let tabLinks = tabList.querySelectorAll(".nav-item");
+        tabLinks.forEach(item => {
+          const link = item.querySelector(".nav-link");
+          const close = item.querySelector(".btn");
+          if (link) link.classList.remove("active");
+          if (close) close.style.display = "none";
         });
+      
         this.classList.add("active");
+        closeBtn.style.display = "inline-block";
       });
+
 
       tabLink.appendChild(tabAnchor);
       tabList.appendChild(tabLink);
@@ -860,8 +860,36 @@ function newTabOnClick(nodeID) {
           attrGroup.appendChild(attrContent);
         }
       }
-
       tabContent.appendChild(tabPane);
+      let closeBtn = document.createElement("button");
+      closeBtn.className = "btn btn-sm btn-danger ml-2";
+      closeBtn.innerText = "×";
+      closeBtn.addEventListener("click", function (e) {
+        changes_bool = true
+        e.stopPropagation(); // empêche d’activer l’onglet
+
+        // Supprimer l'entrée dans OBJ_TEST
+        OBJ_TEST.working_data[nodeID]["to"].splice(i, 1);
+
+        // Supprimer l'onglet et son contenu
+        const paneToRemove = document.getElementById("sortie" + i);
+        if (paneToRemove) paneToRemove.remove();
+        tabLink.remove();
+
+        // Réactiver le 1er onglet si nécessaire
+        const remainingTabs = tabList.querySelectorAll(".nav-link:not(.add-tab)");
+        const remainingPanes = tabContent.querySelectorAll(".tab-pane");
+        if (remainingTabs.length > 0) {
+          remainingTabs[0].classList.add("active");
+          remainingPanes[0].classList.add("show", "active");
+        }
+
+        console.log(`Sortie ${i} supprimée.`);
+      });
+      closeBtn.style.display = (i === 0) ? "inline-block" : "none";
+      tabLink.appendChild(tabAnchor);
+      tabLink.appendChild(closeBtn);
+      tabList.appendChild(tabLink);
     }
     // Onglet "+"
     let addTabLink = document.createElement("li");
@@ -885,6 +913,7 @@ function newTabOnClick(nodeID) {
           const sortieID = input.value.trim();
           if (!sortieID) return;
           cy_graph.add([{group:"edges", data: {id:`e${nodeID}-${sortieID}`, source:nodeID, target:sortieID}}])
+          changes_bool=true
     
           const newIndex = OBJ_TEST.working_data[nodeID]["to"].length;
           let sortie_obj = {}
@@ -967,9 +996,8 @@ function newTabOnClick(nodeID) {
     addTabLink.appendChild(addTabAnchor);
     tabList.appendChild(addTabLink);
 
-    tabContainer.appendChild(tabList);
-    tabContainer.appendChild(tabContent);
-    div.appendChild(tabContainer);
+    div.appendChild(tabList);
+    div.appendChild(tabContent);
 
     let send_button = document.createElement("button");
     send_button.innerText = "Send data";
