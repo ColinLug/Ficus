@@ -79,7 +79,21 @@ body {
 }
 
 
+p {
+  font-size: clamp(10px, 1.5vw, 14.5px);
+  text-align: justify;
+  text-justify: inter-word;
+  line-height: 1.6;
+  padding: 1rem;
+  background-color: #e6ffe9;
+  border: 2px solid black;
+  border-radius: 8px;
 
+  /* Ajouts pour corriger flex */
+  width: 100%;
+  align-self: stretch;
+  flex-shrink: 0;
+}
 
 #sideTab {
   position: fixed;

@@ -8,6 +8,7 @@ let CSV_OBJ = {}
 let OBJ_TEST
 let changes_bool = false
 let CURR_TAG_NAME = "biomes"
+let layout_stop = true
 
 class passageTag{
   constructor({height, width}={}) {
@@ -393,7 +394,14 @@ class Graph{
 }
 
 function refresh(layout="cose"){
-  cy_graph.layout({name:layout}).run()
+  if(layout_stop){
+    console.log("bonjour")
+    layout_stop = false
+    cy_graph.layout({name:layout}).run()
+    cy_graph.on("layoutstop", ()=>{
+      layout_stop = true
+    })
+  }
 }
 
 function* idGenerator(start=0){
@@ -680,33 +688,31 @@ function destroySideTab() {
   const element = document.getElementById("sideTab");
   if(element){
     let nodeID = element.nodeID
-  }
-  let interv = setInterval(() => {
-    if (element && nodeID) {
-      element.remove();
-      clearInterval(interv)
-    }
-  }, 20);
-  if(element){
-    let biomeInputElement = document.getElementById(`biomeCore`);
-    if (biomeInputElement && biomeInputElement.value !== "") {
-      OBJ_TEST.edit(nodeID, ["biomes"], biomeInputElement.value, true);
-    } else {
-      OBJ_TEST.edit(nodeID, ["biomes"], "", true);
-    }
+    if(Object.keys(OBJ_TEST.working_data).includes(nodeID)){
+      let biomeInputElement = document.getElementById(`biomeCore`);
+      if (biomeInputElement && biomeInputElement.value !== "") {
+        OBJ_TEST.edit(nodeID, ["biomes"], biomeInputElement.value, true);
+      } else {
+        OBJ_TEST.edit(nodeID, ["biomes"], "", true);
+      }
 
-    // Mise à jour des attributs des sorties
-    for (let i = 0; i < OBJ_TEST.working_data[nodeID]["to"].length; i++) {
-      for (let attr in OBJ_TEST.working_data[nodeID]["to"][i]) {
-        if (attr !== "sortie" && attr !== "sortie_choix_libre") {
-          let inputElement = document.getElementById(`attrCore${attr}${i}`);
-          if (inputElement && inputElement.value !== "") {
-            OBJ_TEST.edit(nodeID, [i,attr], inputElement.value, false);
+      // Mise à jour des attributs des sorties
+      for (let i = 0; i < OBJ_TEST.working_data[nodeID]["to"].length; i++) {
+        for (let attr in OBJ_TEST.working_data[nodeID]["to"][i]) {
+          if (attr !== "sortie" && attr !== "sortie_choix_libre") {
+            let inputElement = document.getElementById(`attrCore${attr}${i}`);
+            if (inputElement && inputElement.value !== "") {
+              OBJ_TEST.edit(nodeID, [i,attr], inputElement.value, false);
+            }
           }
         }
       }
+      changes_bool = true
+      console.log("Données mises à jour ! To : ", OBJ_TEST.working_data[nodeID].to, ", tags: ", OBJ_TEST.working_data[nodeID].tags);
+      element.remove();
+    }else{
+      element.remove();
     }
-    console.log("Données mises à jour :", OBJ_TEST.working_data[nodeID]);
   }
 }
 
