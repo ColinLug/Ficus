@@ -79,7 +79,7 @@ body {
 }
 
 
-p {
+p{
   font-size: clamp(10px, 1.5vw, 14.5px);
   text-align: justify;
   text-justify: inter-word;

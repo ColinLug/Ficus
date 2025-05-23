@@ -167,7 +167,14 @@ class Data{
         regex_text = new RegExp(`(?<=${i})\\s+((?:.+\\n){0,300})\\s*\\d*\\s+`);
       }
       const match = bookString.match(regex_text)
-      this.working_data[i]["text"] =  match?.[1] || ""
+      if(this.working_data[i]){
+        this.working_data[i]["text"] =  match?.[1] || ""
+      }else{
+        this.working_data[i] = {"text":match?.[1] || "", "to":[{"sortie":""}], "tags":{"biomes":{"value":"", "entry":false}, "personnages":{"value":"", "entry":false}, "actions":{"value":"", "entry":false}}}
+      }
+    }
+    if(this.entry_csv_name ==""){
+      createGraphe(null)
     }
     // const regex_sep = /\s*(\d+)\s*/g
     // let matching_passage = [...bookString.matchAll(regex_sep)]
@@ -665,7 +672,7 @@ function createCyElementsFromDico(dico){
   }
   for(let keys in dico){
     for (let i = 0; i < dico[keys]["to"].length; i++){
-      if(!SORTIES_INV.includes(String(dico[keys]["to"][i]["sortie"])) && String(dico[keys]["to"][i]["sortie"]) != "v"){
+      if(!SORTIES_INV.includes(String(dico[keys]["to"][i]["sortie"])) && String(dico[keys]["to"][i]["sortie"]) != ""){
         cy_list.push({data : {id: `e${String(keys)}-${String(dico[keys]["to"][i]["sortie"])}`, source : String(keys), target : String(dico[keys]["to"][i]["sortie"])}})
       }
     }
@@ -800,7 +807,7 @@ function newTabOnClick(nodeID) {
       let tabAnchor = document.createElement("a");
       tabAnchor.className = "nav-link" + (i === 0 ? " active" : "");
       tabAnchor.setAttribute("data-toggle", "tab");
-      tabAnchor.innerText = "Sortie " + (i + 1);
+      tabAnchor.innerText = "Sortie " + (OBJ_TEST.working_data[nodeID]["to"][i]["sortie"]);
       tabAnchor.addEventListener("click", function() {
         // Masquez tous les contenus d'onglets
         let tabPanes = tabContent.querySelectorAll(".tab-pane");
