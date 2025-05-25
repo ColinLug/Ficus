@@ -46,7 +46,11 @@ class Data{
     changes_bool = true
     if(flood){
       this.working_data[target]["tags"][variable[0]]["value"] = value
-      this.working_data[target]["tags"][variable[0]]["entry"] = true
+      if(value !==""){
+        this.working_data[target]["tags"][variable[0]]["entry"] = true
+      }else{
+        this.working_data[target]["tags"][variable[0]]["entry"] = false 
+      }
     }else{
       this.working_data[target]["to"][variable[0]][variable[1]] = value
     }
@@ -747,37 +751,125 @@ function newTabOnClick(nodeID) {
     text_p.id = "text"
     text_div.appendChild(text_p)
 
-    // Section pour le biome
-    let biomeSection = document.createElement("div");
-    biomeSection.className = "biome-section mb-3";
-    div.appendChild(biomeSection);
+    // Section pour les tags
+    let tagsSection = document.createElement("div");
+    tagsSection.className = "biome-section mb-3";
+    div.appendChild(tagsSection);
 
     // Ajoutez un titre pour la section du biome
-    let biomeTitle = document.createElement("h2");
-    biomeTitle.innerText = "Biome";
-    biomeSection.appendChild(biomeTitle);
+    let tagsTitle = document.createElement("h2");
+    tagsTitle.innerText = "Tags";
+    tagsSection.appendChild(tagsTitle);
 
+    for(tag in OBJ_TEST.working_data[nodeID].tags){
+      let biomeGroup = document.createElement("div");
+      biomeGroup.className = "input-group mb-3";
+      biomeGroup.id = `${tag}Group`;
+      tagsSection.appendChild(biomeGroup);
+  
+      let biomePrepend = document.createElement("div");
+      biomePrepend.id = `${tag}Prepend`;
+      biomePrepend.className = "input-group-prepend";
+      biomeGroup.appendChild(biomePrepend);
+  
+      let biomeName = document.createElement("span");
+      biomeName.innerText = tag;
+      biomeName.className = "input-group-text";
+      biomePrepend.appendChild(biomeName);
+  
+      let biomeContent = document.createElement("input");
+      biomeContent.id = `${tag}Core`;
+      biomeContent.className = "form-control";
+      biomeContent.value = OBJ_TEST.working_data[nodeID]["tags"][tag]["value"] || "";
+      biomeGroup.appendChild(biomeContent);
+    }
+    let addTagBtn = document.createElement("button")
+    addTagBtn.innerText="Ajouter un tag"
+    addTagBtn.className = "btn btn-primary"
+    addTagBtn.style.width = "50%"
+    addTagBtn.style.display = "inline-block"
+    addTagBtn.addEventListener("click", function () {
+      let input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Nouveau tag";
+      input.className = "form-control form-control-sm";
+      input.style.width = "150px";
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          const newTagName = input.value.trim();
+          if (!newTagName) return;
+          if (OBJ_TEST.working_data[nodeID].tags[newTagName]){
+            window.alert("Ce tag existe déjà");
+            return;
+          }
+          for(node in OBJ_TEST.working_data){
+            OBJ_TEST.working_data[node].tags[newTagName] = {"value":"", "entry":false}
+          }
+          changes_bool=true
+          let newbiomeGroup = document.createElement("div");
+          newbiomeGroup.className = "input-group mb-3";
+          newbiomeGroup.id = `${newTagName}Group`;
+          tagsSection.appendChild(newbiomeGroup);
+      
+          let newbiomePrepend = document.createElement("div");
+          newbiomePrepend.id = `${newTagName}Prepend`;
+          newbiomePrepend.className = "input-group-prepend";
+          newbiomeGroup.appendChild(newbiomePrepend);
+      
+          let newbiomeName = document.createElement("span");
+          newbiomeName.innerText = newTagName;
+          newbiomeName.className = "input-group-text";
+          newbiomePrepend.appendChild(newbiomeName);
+      
+          let newbiomeContent = document.createElement("input");
+          newbiomeContent.id = `${newTagName}Core`;
+          newbiomeContent.className = "form-control";
+          newbiomeContent.value = "";
+          newbiomeGroup.appendChild(newbiomeContent);
+          
+          tagsSection.removeChild(input);
+        }
+      })
+      input.focus()
+      tagsSection.appendChild(input)
+    })
+    div.appendChild(addTagBtn)
+
+    let rmvTagBtn = document.createElement("button")
+    rmvTagBtn.innerText="Supprimer un tag"
+    rmvTagBtn.className = "btn btn-remove"
+    rmvTagBtn.style.width = "50%"
+    rmvTagBtn.style.display = "inline-block"
+    rmvTagBtn.addEventListener("click", function () {
+      let input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Tag à supprimer";
+      input.className = "form-control form-control-sm";
+      input.style.width = "150px";
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          const rmvTagName = input.value.trim();
+          if (!rmvTagName) return;
+          if (OBJ_TEST.working_data[nodeID].tags.hasOwnProperty(rmvTagName)){
+            if(confirm(`Voulez-vous vraiment supprimer le tag ${rmvTagName} ?`)){
+              for(node in OBJ_TEST.working_data){
+                delete OBJ_TEST.working_data[node].tags[rmvTagName]
+              }
+              tagsSection.removeChild(document.getElementById(`${rmvTagName}Group`))
+            }
+          }else{
+            window.alert(`Il n'existe aucun tag nommé ${rmvTagName}...`)
+            tagsSection.removeChild(input);
+            return
+          }
+          tagsSection.removeChild(input);
+        }
+      })
+      input.focus()
+      tagsSection.appendChild(input)
+    })
+    div.appendChild(rmvTagBtn)
     // Champ pour le biome
-    let biomeGroup = document.createElement("div");
-    biomeGroup.className = "input-group mb-3";
-    biomeGroup.id = `biomeGroup`;
-    biomeSection.appendChild(biomeGroup);
-
-    let biomePrepend = document.createElement("div");
-    biomePrepend.id = `biomePrepend`;
-    biomePrepend.className = "input-group-prepend";
-    biomeGroup.appendChild(biomePrepend);
-
-    let biomeName = document.createElement("span");
-    biomeName.innerText = "Biome";
-    biomeName.className = "input-group-text";
-    biomePrepend.appendChild(biomeName);
-
-    let biomeContent = document.createElement("input");
-    biomeContent.id = `biomeCore`;
-    biomeContent.className = "form-control";
-    biomeContent.value = OBJ_TEST.working_data[nodeID]["tags"]["biomes"]["value"] || "";
-    biomeGroup.appendChild(biomeContent);
 
     // Ligne séparatrice
     let separator = document.createElement("hr");
@@ -791,6 +883,9 @@ function newTabOnClick(nodeID) {
     // Créez le contenu des onglets
     let tabContent = document.createElement("div");
     tabContent.className = "tab-content";
+    let sortiesTitle = document.createElement("h2");
+    sortiesTitle.innerText = "Sorties";
+    div.appendChild(sortiesTitle);
 
     // Parcourez toutes les sorties pour le nodeID spécifié
     for (let i = 0; i < OBJ_TEST.working_data[nodeID]["to"].length; i++) {
@@ -862,29 +957,34 @@ function newTabOnClick(nodeID) {
       }
       tabContent.appendChild(tabPane);
       let closeBtn = document.createElement("button");
-      closeBtn.className = "btn btn-sm btn-danger ml-2";
+      closeBtn.className = "nav-link close-tab";
       closeBtn.innerText = "×";
       closeBtn.addEventListener("click", function (e) {
-        changes_bool = true
-        e.stopPropagation(); // empêche d’activer l’onglet
+        if(confirm(`Voulez-vous vraiment supprimer la sortie ${OBJ_TEST.working_data[nodeID]["to"][i]["sortie"]}`)){
+          changes_bool = true
+          cy_graph.remove(`#e${nodeID}-${OBJ_TEST.working_data[nodeID]["to"][i]["sortie"]}`)
+          e.stopPropagation(); // empêche d’activer l’onglet
 
-        // Supprimer l'entrée dans OBJ_TEST
-        OBJ_TEST.working_data[nodeID]["to"].splice(i, 1);
+          // Supprimer l'entrée dans OBJ_TEST
+          OBJ_TEST.working_data[nodeID]["to"].splice(i, 1);
 
-        // Supprimer l'onglet et son contenu
-        const paneToRemove = document.getElementById("sortie" + i);
-        if (paneToRemove) paneToRemove.remove();
-        tabLink.remove();
+          // Supprimer l'onglet et son contenu
+          const paneToRemove = document.getElementById("sortie" + i);
+          if (paneToRemove) paneToRemove.remove();
+          tabLink.remove();
 
-        // Réactiver le 1er onglet si nécessaire
-        const remainingTabs = tabList.querySelectorAll(".nav-link:not(.add-tab)");
-        const remainingPanes = tabContent.querySelectorAll(".tab-pane");
-        if (remainingTabs.length > 0) {
-          remainingTabs[0].classList.add("active");
-          remainingPanes[0].classList.add("show", "active");
+          // Réactiver le 1er onglet si nécessaire
+          const remainingTabs = tabList.querySelectorAll(".nav-link:not(.add-tab)");
+          const remainingPanes = tabContent.querySelectorAll(".tab-pane");
+          if (remainingTabs.length > 0) {
+            remainingTabs[0].classList.add("active");
+            remainingPanes[0].classList.add("show", "active");
+          }
+
+          console.log(`Sortie ${i} supprimée.`);
+        }else{
+
         }
-
-        console.log(`Sortie ${i} supprimée.`);
       });
       closeBtn.style.display = (i === 0) ? "inline-block" : "none";
       tabLink.appendChild(tabAnchor);
@@ -912,6 +1012,12 @@ function newTabOnClick(nodeID) {
         if (e.key === "Enter") {
           const sortieID = input.value.trim();
           if (!sortieID) return;
+          for(let sort = 0; sort < OBJ_TEST.working_data[nodeID]["to"].length; sort++){
+            if(OBJ_TEST.working_data[nodeID]["to"][sort]["sortie"]){
+              window.alert("Cette sortie existe déjà...")
+              return
+            }
+          }
           cy_graph.add([{group:"edges", data: {id:`e${nodeID}-${sortieID}`, source:nodeID, target:sortieID}}])
           changes_bool=true
     
