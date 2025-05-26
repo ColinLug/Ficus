@@ -166,7 +166,7 @@ class Data{
     for(let i = 1; i<=max_index;i++){
       let regex_text
       if (i !== max_index) {
-        regex_text = new RegExp(`(?<=\\n)\\s*${i}\\s*\\n((.+\\n)+?)\\s*${i+1}`);
+        regex_text = new RegExp(`(?<=\\n)\\s*${i}\\s*\\n((.+\\n){0,100}?)\\s*${i+1}`);
       }else {
         regex_text = new RegExp(`(?<=${i})\\s+((?:.+\\n){0,300})\\s*\\d*\\s+`);
       }
@@ -789,6 +789,7 @@ function newTabOnClick(nodeID) {
     addTagBtn.style.width = "50%"
     addTagBtn.style.display = "inline-block"
     addTagBtn.addEventListener("click", function () {
+      addTagBtn.disabled = true
       let input = document.createElement("input");
       input.type = "text";
       input.placeholder = "Nouveau tag";
@@ -828,10 +829,12 @@ function newTabOnClick(nodeID) {
           newbiomeGroup.appendChild(newbiomeContent);
           
           tagsSection.removeChild(input);
+          rmvTagBtn.disabled = false
+          addTagBtn.disabled = false
         }
       })
-      input.focus()
       tagsSection.appendChild(input)
+      input.focus()
     })
     div.appendChild(addTagBtn)
 
@@ -855,6 +858,9 @@ function newTabOnClick(nodeID) {
               for(node in OBJ_TEST.working_data){
                 delete OBJ_TEST.working_data[node].tags[rmvTagName]
               }
+              if(Object.keys(OBJ_TEST.working_data[nodeID].tags).length <= 1){
+                rmvTagBtn.disabled = true
+              }
               tagsSection.removeChild(document.getElementById(`${rmvTagName}Group`))
             }
           }else{
@@ -865,8 +871,8 @@ function newTabOnClick(nodeID) {
           tagsSection.removeChild(input);
         }
       })
-      input.focus()
       tagsSection.appendChild(input)
+      input.focus()
     })
     div.appendChild(rmvTagBtn)
     // Champ pour le biome
