@@ -174,7 +174,7 @@ class Data{
       if(this.working_data[i]){
         this.working_data[i]["text"] =  match?.[1] || ""
       }else{
-        this.working_data[i] = {"text":match?.[1] || "", "to":[{"sortie":""}], "tags":{"biomes":{"value":"", "entry":false}, "personnages":{"value":"", "entry":false}, "actions":{"value":"", "entry":false}}}
+        this.working_data[i] = {"text":match?.[1] || "", "to":[], "tags":{"biomes":{"value":"", "entry":false}, "personnages":{"value":"", "entry":false}, "actions":{"value":"", "entry":false}}}
       }
     }
     if(this.entry_csv_name ==""){
@@ -700,11 +700,13 @@ function destroySideTab() {
   if(element){
     let nodeID = element.nodeID
     if(Object.keys(OBJ_TEST.working_data).includes(nodeID)){
-      let biomeInputElement = document.getElementById(`biomeCore`);
-      if (biomeInputElement && biomeInputElement.value !== "") {
-        OBJ_TEST.edit(nodeID, ["biomes"], biomeInputElement.value, true);
-      } else {
-        OBJ_TEST.edit(nodeID, ["biomes"], "", true);
+      for(let tag in OBJ_TEST.working_data[nodeID].tags){
+        let InputElement = document.getElementById(`${tag}Core`);
+        if (InputElement && InputElement.value !== "") {
+          OBJ_TEST.edit(nodeID, [tag], InputElement.value, true);
+        } else {
+          OBJ_TEST.edit(nodeID, [tag], "", true);
+        }
       }
 
       // Mise à jour des attributs des sorties
@@ -727,6 +729,56 @@ function destroySideTab() {
   }
 }
 
+/**
+ * Creates an input group (Prepend-Input) with the following attributes
+ * @param {String} nodeID 
+ * @param {Array} tag 
+ * @param {Boolean} bool_tag 
+ * @param {Object} section 
+ * @returns 
+ */
+function createInputGroup(nodeID, tag, bool_tag, section){
+  let changeID
+  let final_section
+  if(bool_tag){
+    changeID = tag[0]
+    final_section = ""
+  }else{
+    changeID = "attr"
+    final_section = tag[0] + tag [1]
+  }
+  let inpTagGroup = document.createElement("div");
+  inpTagGroup.className = "input-group mb-3";
+  inpTagGroup.id = `${changeID}Group${final_section}`;
+  section.appendChild(inpTagGroup);
+
+  let inpTagPrepend = document.createElement("div");
+  inpTagPrepend.id = `${changeID}Prepend${final_section}`;
+  inpTagPrepend.className = "input-group-prepend";
+  inpTagGroup.appendChild(inpTagPrepend);
+
+  let inpTagName = document.createElement("span");
+  inpTagName.innerText = tag[0];
+  inpTagName.className = "input-group-text";
+  inpTagPrepend.appendChild(inpTagName);
+
+  let inpTagContent = document.createElement("input");
+  inpTagContent.id = `${changeID}Core${final_section}`;
+  inpTagContent.className = "form-control";
+  if(bool_tag){
+    inpTagContent.value = OBJ_TEST.working_data[nodeID]["tags"][tag[0]]["value"] || "";
+  }else{
+    inpTagContent.value = OBJ_TEST.working_data[nodeID]["to"][tag[1]][tag[0]] || "";
+  }
+  inpTagGroup.appendChild(inpTagContent)
+  return inpTagGroup
+}
+
+
+/**
+ * This function creates the side tab that appears when clicking on a node
+ * @param {String} nodeID 
+ */
 function newTabOnClick(nodeID) {
   console.log("Affichage des entrées pour le passage : " + nodeID);
 
@@ -762,26 +814,7 @@ function newTabOnClick(nodeID) {
     tagsSection.appendChild(tagsTitle);
 
     for(tag in OBJ_TEST.working_data[nodeID].tags){
-      let biomeGroup = document.createElement("div");
-      biomeGroup.className = "input-group mb-3";
-      biomeGroup.id = `${tag}Group`;
-      tagsSection.appendChild(biomeGroup);
-  
-      let biomePrepend = document.createElement("div");
-      biomePrepend.id = `${tag}Prepend`;
-      biomePrepend.className = "input-group-prepend";
-      biomeGroup.appendChild(biomePrepend);
-  
-      let biomeName = document.createElement("span");
-      biomeName.innerText = tag;
-      biomeName.className = "input-group-text";
-      biomePrepend.appendChild(biomeName);
-  
-      let biomeContent = document.createElement("input");
-      biomeContent.id = `${tag}Core`;
-      biomeContent.className = "form-control";
-      biomeContent.value = OBJ_TEST.working_data[nodeID]["tags"][tag]["value"] || "";
-      biomeGroup.appendChild(biomeContent);
+     createInputGroup(nodeID,[tag], true, tagsSection)
     }
     let addTagBtn = document.createElement("button")
     addTagBtn.innerText="Ajouter un tag"
@@ -807,26 +840,7 @@ function newTabOnClick(nodeID) {
             OBJ_TEST.working_data[node].tags[newTagName] = {"value":"", "entry":false}
           }
           changes_bool=true
-          let newbiomeGroup = document.createElement("div");
-          newbiomeGroup.className = "input-group mb-3";
-          newbiomeGroup.id = `${newTagName}Group`;
-          tagsSection.appendChild(newbiomeGroup);
-      
-          let newbiomePrepend = document.createElement("div");
-          newbiomePrepend.id = `${newTagName}Prepend`;
-          newbiomePrepend.className = "input-group-prepend";
-          newbiomeGroup.appendChild(newbiomePrepend);
-      
-          let newbiomeName = document.createElement("span");
-          newbiomeName.innerText = newTagName;
-          newbiomeName.className = "input-group-text";
-          newbiomePrepend.appendChild(newbiomeName);
-      
-          let newbiomeContent = document.createElement("input");
-          newbiomeContent.id = `${newTagName}Core`;
-          newbiomeContent.className = "form-control";
-          newbiomeContent.value = "";
-          newbiomeGroup.appendChild(newbiomeContent);
+          createInputGroup(nodeID, [newTagName], true, tagsSection)
           
           tagsSection.removeChild(input);
           rmvTagBtn.disabled = false
@@ -875,7 +889,6 @@ function newTabOnClick(nodeID) {
       input.focus()
     })
     div.appendChild(rmvTagBtn)
-    // Champ pour le biome
 
     // Ligne séparatrice
     let separator = document.createElement("hr");
@@ -938,27 +951,9 @@ function newTabOnClick(nodeID) {
 
       // Parcourez les attributs de la sortie
       for (let attr in sortie) {
-        if (attr !== "sortie" && attr !== "sortie_choix_libre") {
-          let attrGroup = document.createElement("div");
-          attrGroup.className = "input-group mb-3";
-          attrGroup.id = `attrGroup${attr}${i}`;
-          tabPane.appendChild(attrGroup);
-
-          let attrPrepend = document.createElement("div");
-          attrPrepend.id = `attrPrepend${attr}${i}`;
-          attrPrepend.className = "input-group-prepend";
-          attrGroup.appendChild(attrPrepend);
-
-          let attrName = document.createElement("span");
-          attrName.innerText = attr;
-          attrName.className = "input-group-text";
-          attrPrepend.appendChild(attrName);
-
-          let attrContent = document.createElement("input");
-          attrContent.id = `attrCore${attr}${i}`;
-          attrContent.className = "form-control";
-          attrContent.value = sortie[attr] || "";
-          attrGroup.appendChild(attrContent);
+        if (attr !== "sortie") {
+          createInputGroup(nodeID, [attr,i], false, tabPane)
+          // tabPane.appendChild(sortiesGroups)
         }
       }
       tabContent.appendChild(tabPane);
@@ -1019,7 +1014,7 @@ function newTabOnClick(nodeID) {
           const sortieID = input.value.trim();
           if (!sortieID) return;
           for(let sort = 0; sort < OBJ_TEST.working_data[nodeID]["to"].length; sort++){
-            if(OBJ_TEST.working_data[nodeID]["to"][sort]["sortie"]){
+            if(OBJ_TEST.working_data[nodeID]["to"][sort]["sortie"] == sortieID){
               window.alert("Cette sortie existe déjà...")
               return
             }
@@ -1065,26 +1060,7 @@ function newTabOnClick(nodeID) {
           newTabPane.id = "sortie" + newIndex;
           for (let attr in OBJ_TEST.working_data[nodeID]["to"][newIndex]) {
             if (attr !== "sortie" && attr !== "sortie_choix_libre") {
-              let attrGroup = document.createElement("div");
-              attrGroup.className = "input-group mb-3";
-              attrGroup.id = `attrGroup${attr}${newIndex}`;
-              newTabPane.appendChild(attrGroup);
-    
-              let attrPrepend = document.createElement("div");
-              attrPrepend.id = `attrPrepend${attr}${newIndex}`;
-              attrPrepend.className = "input-group-prepend";
-              attrGroup.appendChild(attrPrepend);
-    
-              let attrName = document.createElement("span");
-              attrName.innerText = attr;
-              attrName.className = "input-group-text";
-              attrPrepend.appendChild(attrName);
-    
-              let attrContent = document.createElement("input");
-              attrContent.id = `attrCore${attr}${newIndex}`;
-              attrContent.className = "form-control";
-              attrContent.value = OBJ_TEST.working_data[nodeID]["to"][newIndex][attr] || "";
-              attrGroup.appendChild(attrContent);
+              createInputGroup(nodeID, [attr, newIndex], false, newTabPane)
             }
           }
           tabContent.appendChild(newTabPane);
@@ -1096,7 +1072,7 @@ function newTabOnClick(nodeID) {
     
           // Réafficher le bouton "+"
           addTabAnchor.innerText = "+";
-        }
+          }
       });
     
       // Remplacer le "+" par l'input
@@ -1110,17 +1086,103 @@ function newTabOnClick(nodeID) {
 
     div.appendChild(tabList);
     div.appendChild(tabContent);
+    let addToTagBtn = document.createElement("button")
+    if(OBJ_TEST.working_data[nodeID].to.length<=0){
+      addToTagBtn.disabled = true
+    }
+    addToTagBtn.innerText="Ajouter un tag"
+    addToTagBtn.className = "btn btn-primary"
+    addToTagBtn.style.width = "50%"
+    addToTagBtn.style.display = "inline-block"
+    addToTagBtn.addEventListener("click", function () {
+      addToTagBtn.disabled = true
+      let input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Nouveau tag de sortie";
+      input.className = "form-control form-control-sm";
+      input.style.width = "150px";
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          const newTagName = input.value.trim();
+          const index = document.querySelector(".show").id.substring(6)
+          if (!newTagName) return;
+          if (OBJ_TEST.working_data[nodeID].to.includes(newTagName)){
+            window.alert("Ce tag existe déjà");
+            return;
+          }
+          for(node in OBJ_TEST.working_data){
+            for(let i = 0; i < OBJ_TEST.working_data[node]['to'].length; i++){
+              OBJ_TEST.working_data[node]['to'][i][newTagName] = ""
+            }
+          }
+          changes_bool=true
+          createInputGroup(nodeID, [newTagName, index], false, document.getElementById("sortie"+index))
+          
+          document.getElementById("sortie"+index).removeChild(input);
+          rmvTagBtn.disabled = false
+          addToTagBtn.disabled = false
+        }
+      })
+      document.getElementById("sortie"+document.querySelector(".show").id.substring(6)).appendChild(input)
+      input.focus()
+    })
+    div.appendChild(addToTagBtn)
+
+    let rmvToTagBtn = document.createElement("button")
+    if(OBJ_TEST.working_data[nodeID].to.length<=0){
+      rmvToTagBtn.disabled = true
+    }
+    rmvToTagBtn.innerText="Supprimer un tag"
+    rmvToTagBtn.className = "btn btn-remove"
+    rmvToTagBtn.style.width = "50%"
+    rmvToTagBtn.style.display = "inline-block"
+    rmvToTagBtn.addEventListener("click", function () {
+      let input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Tag de sortie à supprimer";
+      input.className = "form-control form-control-sm";
+      input.style.width = "150px";
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          const rmvTagName = input.value.trim();
+          if (!rmvTagName) return;
+          if (OBJ_TEST.working_data[nodeID].tags.hasOwnProperty(rmvTagName)){
+            if(confirm(`Voulez-vous vraiment supprimer le tag ${rmvTagName} ?`)){
+              for(node in OBJ_TEST.working_data){
+                for(let i = 0; i < OBJ_TEST.working_data[node]['to'].length; i++){
+                  delete OBJ_TEST.working_data[node]['to'][i][rmvTagName]
+                }
+              }
+              if(Object.keys(OBJ_TEST.working_data[nodeID].to[0]).length <= 1){
+                rmvToTagBtn.disabled = true
+              }
+              tabList.removeChild(document.getElementById(`${rmvTagName}Group`))
+            }
+          }else{
+            window.alert(`Il n'existe aucun tag nommé ${rmvTagName}...`)
+            tabList.removeChild(input);
+            return
+          }
+          tabList.removeChild(input);
+        }
+      })
+      tabList.appendChild(input)
+      input.focus()
+    })
+    div.appendChild(rmvToTagBtn)
 
     let send_button = document.createElement("button");
     send_button.innerText = "Send data";
     send_button.className = "btn btn-primary send-btn"
     send_button.addEventListener("click", () => {
-      // Mise à jour du biome
-      let biomeInputElement = document.getElementById(`biomeCore`);
-      if (biomeInputElement && biomeInputElement.value !== "") {
-        OBJ_TEST.edit(nodeID, ["biomes"], biomeInputElement.value, true);
-      } else {
-        OBJ_TEST.edit(nodeID, ["biomes"], "", true);
+      // Mise à jour des tags
+      for(let tag in OBJ_TEST.working_data[nodeID].tags){
+        let InputElement = document.getElementById(`${tag}Core`);
+        if (InputElement && InputElement.value !== "") {
+          OBJ_TEST.edit(nodeID, [tag], InputElement.value, true);
+        } else {
+          OBJ_TEST.edit(nodeID, [tag], "", true);
+        }
       }
 
       // Mise à jour des attributs des sorties
@@ -1141,10 +1203,6 @@ function newTabOnClick(nodeID) {
     console.log("Node ID not found in working_data");
   }
 }
-
-
-
-
 
 
 /**
@@ -1271,28 +1329,71 @@ cy_graph.on('click', function(event) {
 
         console.log("Cacher la sideTab");
         destroySideTab();
-
-        
-        
-        
     }
 });
 
+cy_graph.on('cxttap', function(event) {
+  // Vérifiez si le clic est sur le fond du graphe
+  if (event.target === cy_graph) {
+    const position = event.renderedPosition;
+    
+    // Show the input form at the clicked position
+    const creator = document.getElementById('node-creator');
+    creator.style.display = 'block';
+    creator.style.left = `${position.x}px`;
+    creator.style.top = `${position.y}px`;
+
+    // Focus the input field
+    document.getElementById('new-node-name').focus();
+  }
+});
+
+// Handle "Add" button click
+document.getElementById('add-node-btn').addEventListener('click', function() {
+  const newNodeName = document.getElementById('new-node-name').value.trim();
+  
+  if (newNodeName) {
+    const creator = document.getElementById('node-creator');
+    const pos = { 
+      x: parseInt(creator.style.left), 
+      y: parseInt(creator.style.top) 
+    };
+
+    try{
+      cy_graph.add({
+        group: 'nodes',
+        data: { id: newNodeName, label: newNodeName },
+        position: { x: pos.x, y: pos.y }
+      });
+    }catch{
+      document.getElementById('new-node-name').classList.add('is-invalid');
+      document.getElementById('new-node-name').classList.remove('is-valid');
+      return
+    }
+    document.getElementById('new-node-name').classList.add('is-valid');
+    document.getElementById('new-node-name').classList.remove('is-invalid');
+    OBJ_TEST.working_data[newNodeName] = {"text": "", "to":[], "tags":{}}
+    for(let tag in OBJ_TEST.working_data[Object.keys(OBJ_TEST.working_data)[0]]["tags"]){
+      OBJ_TEST.working_data[newNodeName]["tags"][tag] = {"value":"", "entry":false}
+    }
+    // Reset and hide the form
+    document.getElementById('new-node-name').value = '';
+    creator.style.display = 'none';
+  }
+});
+
+// Handle "Cancel" button click
+document.getElementById('cancel-node-btn').addEventListener('click', function() {
+  document.getElementById('new-node-name').value = '';
+  document.getElementById('node-creator').style.display = 'none';
+  document.getElementById('new-node-name').classList.remove('is-invalid');
+  document.getElementById('new-node-name').classList.remove('is-valid');
+});
   
   // Stop propagation
   cy_graph.on('click', 'node', function(event) {
       event.stopPropagation();
   });
-  
-  var dijkstra = cy_graph.elements().dijkstra('#1', function(edge){
-    return edge.data('weight');
-  });
-  var pathToJ = dijkstra.distanceTo( cy_graph.$('#304') );
-  console.log(dijkstra)
-  console.log(pathToJ)
-  var aStar = cy_graph.elements().aStar({ root: "#172", goal: "#304" });
-  console.log(aStar.path.select())
-  console.log(aStar)
   console.log(OBJ_TEST.working_data)
   const progressBar = document.querySelector(".progress-bar");
   return new Promise(async (resolve)=>{
@@ -1427,7 +1528,7 @@ setInterval(() => {
     localStorage.setItem('autosave', JSON.stringify(OBJ_TEST.toLocalStorage()));
     console.log("Sauvegarde automatique effectuée.")
   }
-}, 10000);
+}, 5000);
 
 // Initialise les données en fonction du cache
 let saved_data;

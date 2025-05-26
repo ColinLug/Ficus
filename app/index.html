@@ -80,6 +80,12 @@
   <div class="container-fluid d-flex flex-column" style="height: 95vh;">
     <div id="cy" class="flex-grow-1"></div>
   </div> 
+  <!-- Hidden input form that appears on right-click -->
+  <div id="node-creator" style="display: none; position: absolute;">
+    <input type="text" id="new-node-name" placeholder="Node name" />
+    <button id="add-node-btn" class="btn-primary">Add</button>
+    <button id="cancel-node-btn" class="btn-remove">Cancel</button>
+  </div>
   
   <!-- MODALE CSV -->
   <div id="csvModal" style="border:none;" class="modal" tabindex="-1" aria-hidden="true">
