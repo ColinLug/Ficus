@@ -46,7 +46,16 @@
   box-shadow: 0 0 0 0.25rem rgba(63, 159, 56, 0.25);
 }
 .send-btn{
-  background-color: blueviolet !important;
+  color:#fff;
+  background-color: rgb(221, 167, 19) !important;
+  width: 50%;
+  display: inline-block;
+}
+.del-btn{
+  color:#fff;
+  background-color: rgb(105, 48, 2) !important;
+  width: 50%;
+  display: inline-block
 }
 html,
 body {
@@ -360,4 +369,9 @@ div {
   background-color: #dc3545 !important;
   border-color: #dc3545 !important;
   opacity: 0.65;
+}
+
+.nav-item {
+  display: inline-flex;
+  align-items: center;
 }

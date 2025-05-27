@@ -76,46 +76,48 @@ class Data{
 
     let results = {}
     let lastValidId = null
+    
+    if(papa_results){
+      for (let i = 0; i < papa_results.length; i++) {
+        let obj = papa_results[i]
+        const id = obj.numero_passage || lastValidId
 
-    for (let i = 0; i < papa_results.length; i++) {
-      let obj = papa_results[i]
-      const id = obj.numero_passage || lastValidId
-
-      if (!results[id]){
-        results[id] = {
-          text: "",
-          to: [],
-          from: [],
-          tags: { biomes: {}, personnages: {}, actions: {} }
-        };
-      }
-      let newExit = {}
-      if(obj.numero_passage){
-        lastValidId = obj.numero_passage
-        // let added_tags = {"biomes":"", "personnages":"", "actions":""}
-        for(let [key, value] of Object.entries(obj)){
-          // Skip la première colonne (numero_passage)
-          if (key === Object.keys(obj)[0]) continue;
-          //récupère les tags des passages...
-          if(key.includes("ficusTag_")){
-            let cleanTagName = key.replace("ficusTag_", "")
-            results[id].tags[cleanTagName] = {"value" : value, "entry" : Boolean(value)}
-          }else{
-            //... et ceux des sorties
-            newExit[key] = value
-          }
+        if (!results[id]){
+          results[id] = {
+            text: "",
+            to: [],
+            from: [],
+            tags: { biomes: {}, personnages: {}, actions: {} }
+          };
         }
-        results[id]["to"].push(newExit)
-      }else{
-        for(let [key, value] of Object.entries(obj)){
-          // Skip la première colonne (numero_passage)
-          if (key === Object.keys(obj)[0]) continue;
-          //récupère les tags des sorties uniquement (pas de tags de passage)
-          if(!key.includes("ficusTag_")){
-            newExit[key] = value
+        let newExit = {}
+        if(obj.numero_passage){
+          lastValidId = obj.numero_passage
+          // let added_tags = {"biomes":"", "personnages":"", "actions":""}
+          for(let [key, value] of Object.entries(obj)){
+            // Skip la première colonne (numero_passage)
+            if (key === Object.keys(obj)[0]) continue;
+            //récupère les tags des passages...
+            if(key.includes("ficusTag_")){
+              let cleanTagName = key.replace("ficusTag_", "")
+              results[id].tags[cleanTagName] = {"value" : value, "entry" : Boolean(value)}
+            }else{
+              //... et ceux des sorties
+              newExit[key] = value
+            }
           }
+          results[id]["to"].push(newExit)
+        }else{
+          for(let [key, value] of Object.entries(obj)){
+            // Skip la première colonne (numero_passage)
+            if (key === Object.keys(obj)[0]) continue;
+            //récupère les tags des sorties uniquement (pas de tags de passage)
+            if(!key.includes("ficusTag_")){
+              newExit[key] = value
+            }
+          }
+          results[id]["to"].push(newExit)
         }
-        results[id]["to"].push(newExit)
       }
     }
     console.log(results)
@@ -666,7 +668,8 @@ function lancerPropagation(passage_dico, tag_name) {
 }
 
 function createCyElementsFromDico(dico){
-  cy_list = []
+  let cy_list = []
+  let return_list = []
   for(let i = 1; i < Object.keys(dico)[0];i++){
     // dico[String(i)]={"text":"", "to":[], "from":[], "tags":{"biomes":"", "personnages":"", "actions":""}}
     cy_list.push({data: { id: String(i) }})
@@ -678,6 +681,15 @@ function createCyElementsFromDico(dico){
     for (let i = 0; i < dico[keys]["to"].length; i++){
       if(!SORTIES_INV.includes(String(dico[keys]["to"][i]["sortie"])) && String(dico[keys]["to"][i]["sortie"]) != ""){
         cy_list.push({data : {id: `e${String(keys)}-${String(dico[keys]["to"][i]["sortie"])}`, source : String(keys), target : String(dico[keys]["to"][i]["sortie"])}})
+      }else if(String(dico[keys]["to"][i]["sortie"]) == "r"){
+        return_list.push(keys)
+      }
+    }
+  }
+  for(let keys in dico){
+    for (let i = 0; i < dico[keys]["to"].length; i++){
+      if(return_list.includes(String(dico[keys]["to"][i]["sortie"]))){
+        cy_list.push({data : {id: `e${String(dico[keys]["to"][i]["sortie"])}-${String(keys)}`, source : String(dico[keys]["to"][i]["sortie"]), target : String(keys)}})
       }
     }
   }
@@ -773,11 +785,56 @@ function createInputGroup(nodeID, tag, bool_tag, section){
   inpTagGroup.appendChild(inpTagContent)
   return inpTagGroup
 }
+function createCloseTabBtn(nodeID, i, tabLink){
+  let closeBtn = document.createElement("button");
+  let tabList = document.getElementById("sortieTabs")
+  closeBtn.className = "nav-link close-tab";
+  closeBtn.innerText = "×";
+  closeBtn.style.display = "none";
+  closeBtn.addEventListener("click", function (e) {
+    if(confirm(`Voulez-vous vraiment supprimer la sortie ${OBJ_TEST.working_data[nodeID]["to"][i]["sortie"]}`)){
+      changes_bool = true
+      cy_graph.remove(`#e${nodeID}-${OBJ_TEST.working_data[nodeID]["to"][i]["sortie"]}`)
+      e.stopPropagation(); // empêche d’activer l’onglet
+
+      // Supprimer l'entrée dans OBJ_TEST
+      OBJ_TEST.working_data[nodeID]["to"].splice(i, 1);
+
+      // Supprimer l'onglet et son contenu
+      const paneToRemove = document.getElementById("sortie" + i);
+      if (paneToRemove) paneToRemove.remove();
+      tabLink.remove();
+
+      // Réactiver le 1er onglet si nécessaire
+      const remainingTabs = tabList.querySelectorAll(".nav-link:not(.add-tab)");
+      const remainingPanes = document.querySelector(".tab-content").querySelectorAll(".tab-pane");
+      if (remainingTabs.length > 0) {
+        remainingTabs[0].classList.add("active");
+        remainingPanes[0].classList.add("show", "active");
+      }
+
+      console.log(`Sortie ${i} supprimée.`);
+    }else{
+
+    }
+  });
+  return closeBtn
+}
 
 
 /**
- * This function creates the side tab that appears when clicking on a node
- * @param {String} nodeID 
+ * This function creates a side tab that appears when clicking on a node. It takes informations
+ * from working_data object to populate the tab. The tab can be used to display and modify
+ * the working_data object via tags or exits.
+ * 
+ * @param {String} nodeID The ID of the node that was clicked
+ * 
+ * @returns {void} This function does not return a value. It directly manipulates the DOM to
+ *                  create and display the side tab.
+ *
+ * @example
+ * // Assuming a node with ID "1" exists in the graph
+ * newTabOnClick("1");
  */
 function newTabOnClick(nodeID) {
   console.log("Affichage des entrées pour le passage : " + nodeID);
@@ -789,12 +846,12 @@ function newTabOnClick(nodeID) {
   div.id = "sideTab";
   div.className = "sideTab";
   document.body.appendChild(div);
+  const fragment = document.createDocumentFragment()
 
   // Vérifiez si nodeID existe dans OBJ_TEST.working_data
   if (OBJ_TEST.working_data[nodeID]) {
     let text_div = document.createElement("div")
     text_div.className = "mb-3 text-group"
-    div.appendChild(text_div)
     let text_title = document.createElement("h2")
     text_title.innerText = "Texte du passage"
     text_div.appendChild(text_title)
@@ -802,11 +859,12 @@ function newTabOnClick(nodeID) {
     text_p.innerText = OBJ_TEST.working_data[nodeID].text
     text_p.id = "text"
     text_div.appendChild(text_p)
+    fragment.appendChild(text_div)
 
     // Section pour les tags
     let tagsSection = document.createElement("div");
     tagsSection.className = "biome-section mb-3";
-    div.appendChild(tagsSection);
+    fragment.appendChild(tagsSection);
 
     // Ajoutez un titre pour la section du biome
     let tagsTitle = document.createElement("h2");
@@ -850,7 +908,7 @@ function newTabOnClick(nodeID) {
       tagsSection.appendChild(input)
       input.focus()
     })
-    div.appendChild(addTagBtn)
+    fragment.appendChild(addTagBtn)
 
     let rmvTagBtn = document.createElement("button")
     rmvTagBtn.innerText="Supprimer un tag"
@@ -888,11 +946,11 @@ function newTabOnClick(nodeID) {
       tagsSection.appendChild(input)
       input.focus()
     })
-    div.appendChild(rmvTagBtn)
+    fragment.appendChild(rmvTagBtn)
 
     // Ligne séparatrice
     let separator = document.createElement("hr");
-    div.appendChild(separator);
+    fragment.appendChild(separator);
 
     // Créez les liens des onglets
     let tabList = document.createElement("ul");
@@ -904,7 +962,7 @@ function newTabOnClick(nodeID) {
     tabContent.className = "tab-content";
     let sortiesTitle = document.createElement("h2");
     sortiesTitle.innerText = "Sorties";
-    div.appendChild(sortiesTitle);
+    fragment.appendChild(sortiesTitle);
 
     // Parcourez toutes les sorties pour le nodeID spécifié
     for (let i = 0; i < OBJ_TEST.working_data[nodeID]["to"].length; i++) {
@@ -957,36 +1015,7 @@ function newTabOnClick(nodeID) {
         }
       }
       tabContent.appendChild(tabPane);
-      let closeBtn = document.createElement("button");
-      closeBtn.className = "nav-link close-tab";
-      closeBtn.innerText = "×";
-      closeBtn.addEventListener("click", function (e) {
-        if(confirm(`Voulez-vous vraiment supprimer la sortie ${OBJ_TEST.working_data[nodeID]["to"][i]["sortie"]}`)){
-          changes_bool = true
-          cy_graph.remove(`#e${nodeID}-${OBJ_TEST.working_data[nodeID]["to"][i]["sortie"]}`)
-          e.stopPropagation(); // empêche d’activer l’onglet
-
-          // Supprimer l'entrée dans OBJ_TEST
-          OBJ_TEST.working_data[nodeID]["to"].splice(i, 1);
-
-          // Supprimer l'onglet et son contenu
-          const paneToRemove = document.getElementById("sortie" + i);
-          if (paneToRemove) paneToRemove.remove();
-          tabLink.remove();
-
-          // Réactiver le 1er onglet si nécessaire
-          const remainingTabs = tabList.querySelectorAll(".nav-link:not(.add-tab)");
-          const remainingPanes = tabContent.querySelectorAll(".tab-pane");
-          if (remainingTabs.length > 0) {
-            remainingTabs[0].classList.add("active");
-            remainingPanes[0].classList.add("show", "active");
-          }
-
-          console.log(`Sortie ${i} supprimée.`);
-        }else{
-
-        }
-      });
+      let closeBtn = createCloseTabBtn(nodeID, i, tabLink)
       closeBtn.style.display = (i === 0) ? "inline-block" : "none";
       tabLink.appendChild(tabAnchor);
       tabLink.appendChild(closeBtn);
@@ -997,7 +1026,7 @@ function newTabOnClick(nodeID) {
     addTabLink.className = "nav-item";
 
     let addTabAnchor = document.createElement("a");
-    addTabAnchor.className = "nav-link";
+    addTabAnchor.className = "nav-link add-tab";
     addTabAnchor.href = "#";
     addTabAnchor.innerText = "+";
     addTabAnchor.style.fontWeight = "bold";
@@ -1010,6 +1039,9 @@ function newTabOnClick(nodeID) {
       input.className = "form-control form-control-sm";
       input.style.width = "150px";
       input.addEventListener("keydown", function (e) {
+        /**
+         * Creates a new exit and tab corresponding
+         */
         if (e.key === "Enter") {
           const sortieID = input.value.trim();
           if (!sortieID) return;
@@ -1019,8 +1051,14 @@ function newTabOnClick(nodeID) {
               return
             }
           }
-          cy_graph.add([{group:"edges", data: {id:`e${nodeID}-${sortieID}`, source:nodeID, target:sortieID}}])
+          
+          if(Object.keys(OBJ_TEST.working_data).includes(sortieID)){
+            cy_graph.add([{group:"edges", data: {id:`e${nodeID}-${sortieID}`, source:nodeID, target:sortieID}}])
+          }else if(!SORTIES_INV.includes(sortieID)){
+              return
+          }
           changes_bool=true
+
     
           const newIndex = OBJ_TEST.working_data[nodeID]["to"].length;
           let sortie_obj = {}
@@ -1029,7 +1067,24 @@ function newTabOnClick(nodeID) {
               sortie_obj[attr]=""
             }
           }else{
-            for(let attr in OBJ_TEST.working_data[Object.keys(OBJ_TEST.working_data)[0]]["to"][0]){
+            let ind_count = 0
+            let continuer = true
+            let index
+            while (continuer && ind_count<Object.keys(OBJ_TEST.working_data).length) {
+              index = Object.keys(OBJ_TEST.working_data)[ind_count]
+              ind_count+=1
+              for(let i = 0 ; i<OBJ_TEST.working_data[index]['to'].length; i++){
+                console.log(Object.keys(OBJ_TEST.working_data[index]['to'][i]).length)
+                if(Object.keys(OBJ_TEST.working_data[index]['to'][i]).length>1){
+                  continuer = false
+                }
+              }
+            }
+            if(continuer){
+              index = 0
+            }
+            console.log(index)
+            for(let attr in OBJ_TEST.working_data[index]["to"][0]){
               sortie_obj[attr]=""
             }
           }
@@ -1045,14 +1100,16 @@ function newTabOnClick(nodeID) {
           newTabAnchor.setAttribute("data-toggle", "tab");
           newTabAnchor.innerText = "Sortie " + sortieID;
           newTabAnchor.addEventListener("click", function () {
+            document.querySelectorAll('.close-tab').forEach(btn => {
+              btn.style.display = "none";
+            });
+            const closeBtn = this.parentNode.querySelector('.close-tab');
+            if (closeBtn) closeBtn.style.display = "inline-block";
             tabList.querySelectorAll(".nav-link").forEach(link => link.classList.remove("active"));
             tabContent.querySelectorAll(".tab-pane").forEach(pane => pane.classList.remove("show", "active"));
             newTabAnchor.classList.add("active");
             newTabPane.classList.add("show", "active");
           });
-    
-          newTabLink.appendChild(newTabAnchor);
-          tabList.insertBefore(newTabLink, addTabLink);
     
           // Créer le contenu du nouvel onglet
           let newTabPane = document.createElement("div");
@@ -1069,8 +1126,20 @@ function newTabOnClick(nodeID) {
           tabContent.querySelectorAll(".tab-pane").forEach(pane => pane.classList.remove("show", "active"));
           newTabAnchor.classList.add("active");
           newTabPane.classList.add("show", "active");
+
+          let closeBtn = createCloseTabBtn(nodeID, newIndex, newTabLink)
+          // closeBtn.style.display = "inline-flex";
+          newTabLink.appendChild(newTabAnchor);
+          newTabLink.appendChild(closeBtn)
+          tabList.insertBefore(newTabLink, addTabLink);
     
           // Réafficher le bouton "+"
+          document.getElementById("addToTagBtn").disabled = false
+          console.log("pipiassn : ",newIndex,nodeID)
+          if(Object.keys(OBJ_TEST.working_data[nodeID]['to'][newIndex]).length > 1){
+            console.log("pipiassn : ",newIndex,nodeID)
+            document.getElementById("rmvToTagBtn").disabled = false
+          }
           addTabAnchor.innerText = "+";
           }
       });
@@ -1084,13 +1153,14 @@ function newTabOnClick(nodeID) {
     addTabLink.appendChild(addTabAnchor);
     tabList.appendChild(addTabLink);
 
-    div.appendChild(tabList);
-    div.appendChild(tabContent);
+    fragment.appendChild(tabList);
+    fragment.appendChild(tabContent);
     let addToTagBtn = document.createElement("button")
     if(OBJ_TEST.working_data[nodeID].to.length<=0){
       addToTagBtn.disabled = true
     }
     addToTagBtn.innerText="Ajouter un tag"
+    addToTagBtn.id="addToTagBtn"
     addToTagBtn.className = "btn btn-primary"
     addToTagBtn.style.width = "50%"
     addToTagBtn.style.display = "inline-block"
@@ -1119,20 +1189,21 @@ function newTabOnClick(nodeID) {
           createInputGroup(nodeID, [newTagName, index], false, document.getElementById("sortie"+index))
           
           document.getElementById("sortie"+index).removeChild(input);
-          rmvTagBtn.disabled = false
+          rmvToTagBtn.disabled = false
           addToTagBtn.disabled = false
         }
       })
       document.getElementById("sortie"+document.querySelector(".show").id.substring(6)).appendChild(input)
       input.focus()
     })
-    div.appendChild(addToTagBtn)
+    fragment.appendChild(addToTagBtn)
 
     let rmvToTagBtn = document.createElement("button")
     if(OBJ_TEST.working_data[nodeID].to.length<=0){
       rmvToTagBtn.disabled = true
     }
     rmvToTagBtn.innerText="Supprimer un tag"
+    rmvToTagBtn.id = "rmvToTagBtn"
     rmvToTagBtn.className = "btn btn-remove"
     rmvToTagBtn.style.width = "50%"
     rmvToTagBtn.style.display = "inline-block"
@@ -1143,10 +1214,11 @@ function newTabOnClick(nodeID) {
       input.className = "form-control form-control-sm";
       input.style.width = "150px";
       input.addEventListener("keydown", function (e) {
+        const index = document.querySelector(".show").id.substring(6)
         if (e.key === "Enter") {
           const rmvTagName = input.value.trim();
           if (!rmvTagName) return;
-          if (OBJ_TEST.working_data[nodeID].tags.hasOwnProperty(rmvTagName)){
+          if (OBJ_TEST.working_data[nodeID].to[index].hasOwnProperty(rmvTagName)){
             if(confirm(`Voulez-vous vraiment supprimer le tag ${rmvTagName} ?`)){
               for(node in OBJ_TEST.working_data){
                 for(let i = 0; i < OBJ_TEST.working_data[node]['to'].length; i++){
@@ -1156,24 +1228,26 @@ function newTabOnClick(nodeID) {
               if(Object.keys(OBJ_TEST.working_data[nodeID].to[0]).length <= 1){
                 rmvToTagBtn.disabled = true
               }
-              tabList.removeChild(document.getElementById(`${rmvTagName}Group`))
+              document.getElementById("sortie"+index).removeChild(document.getElementById(`attrGroup${rmvTagName}${index}`))
             }
           }else{
             window.alert(`Il n'existe aucun tag nommé ${rmvTagName}...`)
-            tabList.removeChild(input);
+            document.getElementById("sortie"+index).removeChild(input);
             return
           }
-          tabList.removeChild(input);
+          document.getElementById("sortie"+index).removeChild(input);
         }
       })
-      tabList.appendChild(input)
+      document.getElementById("sortie"+document.querySelector(".show").id.substring(6)).appendChild(input)
       input.focus()
     })
-    div.appendChild(rmvToTagBtn)
+    fragment.appendChild(rmvToTagBtn)
+    let separator2 = document.createElement("hr");
+    fragment.appendChild(separator2);
 
     let send_button = document.createElement("button");
     send_button.innerText = "Send data";
-    send_button.className = "btn btn-primary send-btn"
+    send_button.className = "btn send-btn"
     send_button.addEventListener("click", () => {
       // Mise à jour des tags
       for(let tag in OBJ_TEST.working_data[nodeID].tags){
@@ -1198,7 +1272,18 @@ function newTabOnClick(nodeID) {
       }
       console.log("Données mises à jour :", OBJ_TEST.working_data[nodeID]);
     });
-    div.appendChild(send_button);
+    let supp_node_button = document.createElement("button");
+    supp_node_button.innerText = "Delete node";
+    supp_node_button.className = "btn del-btn"
+    supp_node_button.addEventListener("click", () => {
+      if(confirm(`Voulez-vous réellement supprimer le noeud ${nodeID}`)){
+        delete OBJ_TEST.working_data[nodeID]
+        cy_graph.$(`#${nodeID}`).remove()
+      }else{}
+    });
+    fragment.appendChild(send_button);
+    fragment.appendChild(supp_node_button);
+    div.appendChild(fragment)
   } else {
     console.log("Node ID not found in working_data");
   }
@@ -1260,6 +1345,11 @@ async function createGraphe(url=null) {
           'text-halign':'center',
           // 'font-size':10,
           // 'font-family':'Serif'
+          'background-position-x':'120%',
+          'background-position-y':'-3px',
+          'background-clip':'none',
+          'background-width':'16px',
+          'background-height':'16px'
         }
       },
   
@@ -1282,6 +1372,24 @@ async function createGraphe(url=null) {
   
   });
   cy_graph.boxSelectionEnabled(true);
+  
+  for(let key in OBJ_TEST.working_data){
+    for (let i = 0; i < OBJ_TEST.working_data[key]["to"].length; i++){
+      if(SORTIES_INV.includes(String(OBJ_TEST.working_data[key]["to"][i]["sortie"]))){
+        switch(String(OBJ_TEST.working_data[key]["to"][i]["sortie"])){
+          case 'x':
+            cy_graph.$(`#${key}`).style('background-image','/images/defeat.png')
+            break;
+          case 'v':
+            cy_graph.$(`#${key}`).style('background-image','/images/victory.png')
+            break;
+          case 'p':
+            cy_graph.$(`#${key}`).style('background-image','/images/partial_vict.png')
+            break;
+        }
+      }
+    }
+  }
 
   cy_graph.on('click', 'node', function(evt) {
     const clickedNode = this;
@@ -1339,7 +1447,7 @@ cy_graph.on('cxttap', function(event) {
     
     // Show the input form at the clicked position
     const creator = document.getElementById('node-creator');
-    creator.style.display = 'block';
+    creator.style.display = 'inline-flex';
     creator.style.left = `${position.x}px`;
     creator.style.top = `${position.y}px`;
 
