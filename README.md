@@ -18,15 +18,26 @@ Ces données sont ensuite exportables au même format CSV.
 
 ## UTILISATION
 
-*Les instructions d'utilisation viennent ici.*
+### Prérequis:
+1. Un fichier CSV pour la numérisation.
+2. Éventuellement, le fichier PDF lié au LVDELH à numériser.
+
+### Utiliser Ficus
+1. Ouvrir le logiciel.
+2. Charger le fichier CSV.
+3. Éventuellement, charger le fichier PDF lié.
+4. Les fonctions sont disponibles via l'interface.
 
 ## INSTALLATION
 
 1. Télécharger l'application depuis l'onglet _releases_.
 2. Lancer l'application.
 
+### Note pour macOS.
+L'application n'étant pas signée, il faut l'ouvrir soit après désactivation de Gatekeeper (non recommandé), soit via le Terminal.
+
 ## AUTRES
 
 ### Crédits
 
-Rôles + noms.
+Chevroulet Lorelei, Lugenbühl Colin, Borgeaud Matthias.
