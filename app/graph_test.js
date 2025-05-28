@@ -65,9 +65,9 @@ class Data{
     let papa_results = ""
     Papa.parse(text_csv, {
       header:true,
-      skipEmptyLines: true, // Ignorer les lignes vides
+      skipEmptyLines: true, // Ignor empty ligns
       complete: (results) => {
-        papa_results = results.data; // Afficher les données
+        papa_results = results.data; // display data
       },
       error: (err) => {
         console.error('Erreur lors du parsing du CSV:', err);
@@ -127,7 +127,7 @@ class Data{
 
   /**
    * Import text from a PDF and slice it by chapter, then add each chapter's text to its corresponding node in working_data
-   * @returns 
+   * @returns {void}
    */
   async importPDF(){
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -247,6 +247,9 @@ class Data{
     }
   }
 
+  /**
+   * Let export the OBJ_TEST into a .json file working as a DataBase
+   */
   toJSONFile(){
     let json_table = {
       nom: this.entry_csv_name.split('.')[0],
@@ -323,8 +326,14 @@ class Data{
     URL.revokeObjectURL(url);
   }
 
+  /**
+   * Help to export into a CSV the OBJ_TEST.working_data
+   * @returns {object} a clickable link containing the export .csv file
+   */
   export(){
-    // Fonction pour échapper les valeurs contenant des virgules et faussant le csv sinon
+    /**
+     * Fonction pour échapper les valeurs contenant des virgules et faussant le csv sinon
+     */
     function escapeCSVValue(value) {
       // Si ce n'est pas un string, on retourne la valeur telle quelle
       if (typeof value !== 'string') return value;
@@ -390,7 +399,12 @@ class Data{
     return save_obj
   }
 }
-// cytoscape.js ne permet pas de créer un héritage...
+/**
+ * /!\/!\Deprecated/!\/!\ 
+ * The class was designed for extends the cytoscape class. Unfortunately,
+ * there's no inheritance from the cytoscape class possible (at my knowledge).
+ * see inheritance from ES6 classes
+ */
 class Graph{
   constructor(options) {
     this.cy = cytoscape(options);
@@ -406,6 +420,10 @@ class Graph{
   }
 }
 
+/**
+ * Let refresh the layout of the graph
+ * @param {String} layout The layout wich you would like (only cose for now)
+ */
 function refresh(layout="cose"){
   if(layout_stop){
     console.log("bonjour")
@@ -417,6 +435,10 @@ function refresh(layout="cose"){
   }
 }
 
+/**
+ * Circle through ids without overlapping
+ * @param {Number} start the first id you would like
+ */
 function* idGenerator(start=0){
   let id = start
   while(true){
@@ -424,6 +446,10 @@ function* idGenerator(start=0){
   }
 }
 
+/**
+ * Initiates all thing necessary to node search (like css for the cy obj,
+ * the input group where to tap your search,...)
+ */
 function initNodeSearch() {
   cy_graph.style()
     .selector('.highlighted-node')
@@ -514,7 +540,12 @@ function initNodeSearch() {
     clearHighlight();
   });
 
-  // Fonction principale de recherche
+  /**
+   * Operates the search of one node, adding some classes to the node for recognition,
+   * and a zoom to the node searched
+   * @param {String} nodeId 
+   * @returns {void} when no node id
+   */
   function searchNodeById(nodeId) {
     clearHighlight();
     
@@ -539,8 +570,14 @@ function initNodeSearch() {
     }
   }
 
-  // Pour la doc : si l'utilisateur·ice entre 3 nombre séparés par des virgules
-  // "from, via, to", sinon "from, to"
+  /**
+   * Let search for a path of nodes
+   * @param {String} node1 the node where to start the path
+   * @param {String} node2 if via=null, works like the end of the path, else act as the via node
+   * @param {String} via act as the end of the path, if null skip it
+   * @returns {Object} keys: success: bool, if success-> path: list[nodes] representing the path, if !success
+   * -> error: error.message
+   */
   async function fromToVia(node1,node2, via=null){
     clearHighlight()
     if(via){
@@ -592,6 +629,9 @@ function initNodeSearch() {
     }
     //{data : {id: `e${String(keys)}-${String(dico[keys]["to"][i]["sortie"])}`, source : String(keys), target : String(dico[keys]["to"][i]["sortie"])}}
   }
+  /**
+   * Clear all highlight or css class added when searching node
+   */
   function clearHighlight() {
     cy_graph.nodes().removeClass('highlighted-node');
     cy_graph.nodes().removeClass('final-node');
@@ -601,7 +641,13 @@ function initNodeSearch() {
   }
 }
 
-
+/**
+ * Let propagate a tag name, stop when the all nodes have been tagged
+ * Differentiate between the {entry:true} tag, acting as door, and {entry:false}
+ * wich can hold a tag but not propagate it when executing the function
+ * @param {Object} passage_dico the dict containing all the infos necessary to propagate the tags
+ * @param {String} tag_name the tag name to propagate
+ */
 function lancerPropagation(passage_dico, tag_name) {
   // Initialiser les valeurs si elles n'existent pas
   if (!TAG_VALUES[tag_name]) {
@@ -609,7 +655,13 @@ function lancerPropagation(passage_dico, tag_name) {
   }
 
   const visited = new Set();
-
+  /**
+   * A recursive function to propagate the tag, stop when a node has already a tag
+   * @param {Object} passage_dico the dict containing all the infos necessary to propagate the tags
+   * @param {String} passage the node ID of the exit where to propagate
+   * @param {String} value the tag's value to add
+   * @param {String} tag_name the tag name to propagate
+   */
   function propagation(passage_dico, passage, value, tag_name) {
     // Ajouter la valeur au tableau spécifique si elle n'y est pas
     if (!TAG_VALUES[tag_name].includes(value)) {
@@ -667,6 +719,11 @@ function lancerPropagation(passage_dico, tag_name) {
   });
 }
 
+/**
+ * Transform a dictionnary of data into an array that can be used to generate a cytoscape graph
+ * @param {Object} dico the dico to transform into the list usable by cytoscape
+ * @returns {Array} an array of nodes usable by cytoscape
+ */
 function createCyElementsFromDico(dico){
   let cy_list = []
   let return_list = []
@@ -696,6 +753,11 @@ function createCyElementsFromDico(dico){
   return cy_list
 }
 
+/**
+ * /!\Unused/!\
+ * Let create a sample list to test the cytoscape graph
+ * @returns {Array} a list of nodes
+ */
 function createSampleCy(){
   cy_list = [{data: { id: -1}}]
   for(let i = 0; i<100;i++){
@@ -707,6 +769,9 @@ function createSampleCy(){
   return cy_list
 }
 
+/**
+ * Destroy the sideTab that appears when clicking on a node
+ */
 function destroySideTab() {
   const element = document.getElementById("sideTab");
   if(element){
@@ -743,11 +808,11 @@ function destroySideTab() {
 
 /**
  * Creates an input group (Prepend-Input) with the following attributes
- * @param {String} nodeID 
- * @param {Array} tag 
- * @param {Boolean} bool_tag 
- * @param {Object} section 
- * @returns 
+ * @param {String} nodeID the node's id, to read the data to display
+ * @param {Array} tag the tag's name to be added 
+ * @param {Boolean} bool_tag if it's a node's tag (true) or a exit's tag (false)
+ * @param {Object} section where the input-group will be added
+ * @returns {Object} A group of HTML objects (prepend-input) that will be displayed in the side tab
  */
 function createInputGroup(nodeID, tag, bool_tag, section){
   let changeID
@@ -785,6 +850,13 @@ function createInputGroup(nodeID, tag, bool_tag, section){
   inpTagGroup.appendChild(inpTagContent)
   return inpTagGroup
 }
+/**
+ * Create and display (or not depending on the active tab) a close button to delete an exit
+ * @param {String} nodeID the node's id, to read the data to display
+ * @param {Number} i the index of the exit's array to wich create the close btn
+ * @param {Object} tabLink where to attach the close btn
+ * @returns {Object} The created button used to delete the exit
+ */
 function createCloseTabBtn(nodeID, i, tabLink){
   let closeBtn = document.createElement("button");
   let tabList = document.getElementById("sortieTabs")
@@ -846,12 +918,18 @@ function newTabOnClick(nodeID) {
   div.id = "sideTab";
   div.className = "sideTab";
   document.body.appendChild(div);
+
+  // The creation of a fragment limits the acces of the DOM wich
+  // can slow the process, add them to a fragment --> then to the DOM
   const fragment = document.createDocumentFragment()
 
-  // Vérifiez si nodeID existe dans OBJ_TEST.working_data
   if (OBJ_TEST.working_data[nodeID]) {
+    
+    // Creation of the side tab div 
     let text_div = document.createElement("div")
     text_div.className = "mb-3 text-group"
+
+    //Creation of the text section
     let text_title = document.createElement("h2")
     text_title.innerText = "Texte du passage"
     text_div.appendChild(text_title)
@@ -861,19 +939,21 @@ function newTabOnClick(nodeID) {
     text_div.appendChild(text_p)
     fragment.appendChild(text_div)
 
-    // Section pour les tags
+    //Creation of the tag section
     let tagsSection = document.createElement("div");
     tagsSection.className = "biome-section mb-3";
     fragment.appendChild(tagsSection);
-
-    // Ajoutez un titre pour la section du biome
     let tagsTitle = document.createElement("h2");
     tagsTitle.innerText = "Tags";
     tagsSection.appendChild(tagsTitle);
 
+    // Create all tag-input groups and add them to the tags section
     for(tag in OBJ_TEST.working_data[nodeID].tags){
      createInputGroup(nodeID,[tag], true, tagsSection)
     }
+
+    // Create the 2 buttons, here the add tag button
+    // This will help create a new tag
     let addTagBtn = document.createElement("button")
     addTagBtn.innerText="Ajouter un tag"
     addTagBtn.className = "btn btn-primary"
@@ -908,8 +988,10 @@ function newTabOnClick(nodeID) {
       tagsSection.appendChild(input)
       input.focus()
     })
+    // Append the add button to the fragment
     fragment.appendChild(addTagBtn)
 
+    //Here the delete tag button to remove a non-used tag
     let rmvTagBtn = document.createElement("button")
     rmvTagBtn.innerText="Supprimer un tag"
     rmvTagBtn.className = "btn btn-remove"
@@ -946,46 +1028,46 @@ function newTabOnClick(nodeID) {
       tagsSection.appendChild(input)
       input.focus()
     })
+
+    // Append the rmv button to the fragment
     fragment.appendChild(rmvTagBtn)
 
-    // Ligne séparatrice
+    // Just a separator to better reading
     let separator = document.createElement("hr");
     fragment.appendChild(separator);
 
-    // Créez les liens des onglets
+    // Create the tabs
     let tabList = document.createElement("ul");
     tabList.className = "nav nav-tabs";
     tabList.id = "sortieTabs";
-
-    // Créez le contenu des onglets
     let tabContent = document.createElement("div");
     tabContent.className = "tab-content";
     let sortiesTitle = document.createElement("h2");
     sortiesTitle.innerText = "Sorties";
     fragment.appendChild(sortiesTitle);
 
-    // Parcourez toutes les sorties pour le nodeID spécifié
+    // Circle through the exits
     for (let i = 0; i < OBJ_TEST.working_data[nodeID]["to"].length; i++) {
       let sortie = OBJ_TEST.working_data[nodeID]["to"][i];
 
-      // Créez un lien pour chaque onglet
       let tabLink = document.createElement("li");
       tabLink.className = "nav-item d-flex align-items-center";
-
+      
+      //Create a link for each tab
       let tabAnchor = document.createElement("a");
       tabAnchor.className = "nav-link" + (i === 0 ? " active" : "");
       tabAnchor.setAttribute("data-toggle", "tab");
       tabAnchor.innerText = "Sortie " + (OBJ_TEST.working_data[nodeID]["to"][i]["sortie"]);
       tabAnchor.addEventListener("click", function () {
-        // Masquez tous les contenus d'onglets
+        // Hide all tabs content
         let tabPanes = tabContent.querySelectorAll(".tab-pane");
         tabPanes.forEach(pane => pane.classList.remove("show", "active"));
       
-        // Affichez le contenu de l'onglet cliqué
+        // Display the tab-active content
         let tabPane = document.getElementById("sortie" + i);
         tabPane.classList.add("show", "active");
       
-        // Mettez à jour l'état actif des liens d'onglets et des croix
+        // Update the close btn and display
         let tabLinks = tabList.querySelectorAll(".nav-item");
         tabLinks.forEach(item => {
           const link = item.querySelector(".nav-link");
@@ -1002,14 +1084,15 @@ function newTabOnClick(nodeID) {
       tabLink.appendChild(tabAnchor);
       tabList.appendChild(tabLink);
 
-      // Créez le contenu de chaque onglet
+      // Create each tab content
       let tabPane = document.createElement("div");
       tabPane.className = "tab-pane fade" + (i === 0 ? " show active" : "");
       tabPane.id = "sortie" + i;
 
-      // Parcourez les attributs de la sortie
+      // Circle through the exits attributes/tags
       for (let attr in sortie) {
         if (attr !== "sortie") {
+          // Create the input group (exit's tag - input)
           createInputGroup(nodeID, [attr,i], false, tabPane)
           // tabPane.appendChild(sortiesGroups)
         }
@@ -1021,7 +1104,8 @@ function newTabOnClick(nodeID) {
       tabLink.appendChild(closeBtn);
       tabList.appendChild(tabLink);
     }
-    // Onglet "+"
+    
+    // Create a "+" tab that will let the user add exits
     let addTabLink = document.createElement("li");
     addTabLink.className = "nav-item";
 
@@ -1144,7 +1228,7 @@ function newTabOnClick(nodeID) {
           }
       });
     
-      // Remplacer le "+" par l'input
+      // Replace "+" by the input
       addTabAnchor.innerText = "";
       addTabAnchor.appendChild(input);
       input.focus();
@@ -1155,6 +1239,8 @@ function newTabOnClick(nodeID) {
 
     fragment.appendChild(tabList);
     fragment.appendChild(tabContent);
+
+    // Creates the 2 add/delete buttons for exit's tags
     let addToTagBtn = document.createElement("button")
     if(OBJ_TEST.working_data[nodeID].to.length<=0){
       addToTagBtn.disabled = true
@@ -1243,10 +1329,14 @@ function newTabOnClick(nodeID) {
     })
     fragment.appendChild(rmvToTagBtn)
     let separator2 = document.createElement("hr");
+    
+    // Just a seperator to better reading
     fragment.appendChild(separator2);
 
+    // Create the send button that will save the data from the inputs groups to
+    // OBJ_TEST.working_data dictionnary (can be achieved simply by closing the side tab too)
     let send_button = document.createElement("button");
-    send_button.innerText = "Send data";
+    send_button.innerText = "Sauvegarder les données";
     send_button.className = "btn send-btn"
     send_button.addEventListener("click", () => {
       // Mise à jour des tags
@@ -1272,8 +1362,10 @@ function newTabOnClick(nodeID) {
       }
       console.log("Données mises à jour :", OBJ_TEST.working_data[nodeID]);
     });
+
+    //Creates the delete node button that deletes the clicked node
     let supp_node_button = document.createElement("button");
-    supp_node_button.innerText = "Delete node";
+    supp_node_button.innerText = "Supprimer le noeud";
     supp_node_button.className = "btn del-btn"
     supp_node_button.addEventListener("click", () => {
       if(confirm(`Voulez-vous réellement supprimer le noeud ${nodeID}`)){
@@ -1291,9 +1383,10 @@ function newTabOnClick(nodeID) {
 
 
 /**
- * 
- * @param {String} url 
- * @returns 
+ * Create a graph from a CSV by calling createCyElementsFromDico
+ * Add differents attributes to the cy_graph (style, events,...)
+ * @param {String} url The csv path from whom the datas will be extracted and displayed as a graph
+ * @returns {void}
  */
 async function createGraphe(url=null) {
   if(url){
@@ -1420,10 +1513,11 @@ async function createGraphe(url=null) {
     newTabOnClick(nodeID);
 });
 
+
 cy_graph.on('click', function(event) {
-    // Vérifiez si le clic est sur le fond du graphe
+    // Verify if the click is on the background
     if (event.target === cy_graph) {
-        // Définissez explicitement les dimensions de base
+        // Define the dimensions of the nodes
         const baseWidth = 30;
         const baseHeight = 30;
 
@@ -1440,8 +1534,11 @@ cy_graph.on('click', function(event) {
     }
 });
 
+/**
+ * If right-click on background, show a input to add node
+ */
 cy_graph.on('cxttap', function(event) {
-  // Vérifiez si le clic est sur le fond du graphe
+  // Verify if the click is on the background
   if (event.target === cy_graph) {
     const position = event.renderedPosition;
     
@@ -1512,8 +1609,9 @@ document.getElementById('cancel-node-btn').addEventListener('click', function() 
     resolve()
   })
 }
-// gérer l'importation du CSV dans le graphe
+// Creates the buttons/interactives elements event listeners
 document.addEventListener("DOMContentLoaded", function () {
+  // Get all buttons/interactive elements in variables to further manipulation
   let isImportating = false
   const propaBtn = document.getElementById("propaBtn");
   const modal = document.getElementById("csvModal");
@@ -1526,11 +1624,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const progressBar = document.querySelector(".progress-bar");
   const refreshBtn = document.getElementById("refreshBtn")
   const downloadCSVButton = document.getElementById('downloadCSV');
+  const downloadPDFButton = document.getElementById('downloadPDF');
   const leftArr = document.querySelector(".svg-arrow-left");
   const rightArr = document.querySelector(".svg-arrow");
 
-  let importedCSV = null; // Variable pour stocker le fichier CSV
+  let importedCSV = null;
 
+  // Circle through the tags by -1 when clicking
   leftArr.addEventListener("click", () => {
     let tags_array = Object.keys(OBJ_TEST.working_data[Object.keys(OBJ_TEST.working_data)[0]]["tags"])
     let current_tag = propaBtn.innerText.match(/(?<=Propager[ ])\w+/g)[0]
@@ -1539,6 +1639,7 @@ document.addEventListener("DOMContentLoaded", function () {
     propaBtn.innerText = `Propager ${tags_array[new_index]}`
     CURR_TAG_NAME = tags_array[new_index]
   });
+  // Circle through the tags by +1 when clicking
   rightArr.addEventListener("click", () => {
     let tags_array = Object.keys(OBJ_TEST.working_data[Object.keys(OBJ_TEST.working_data)[0]]["tags"])
     let current_tag = propaBtn.innerText.match(/(?<=Propager[ ])\w+/g)[0]
@@ -1547,23 +1648,39 @@ document.addEventListener("DOMContentLoaded", function () {
     propaBtn.innerText = `Propager ${tags_array[new_index]}`
     CURR_TAG_NAME = tags_array[new_index]
   });
+  
+  // Let download the CSV file when clicked
   downloadCSVButton.addEventListener('click', () => {
     let link = OBJ_TEST.export();  // Simuler le clic sur le lien pour télécharger
     link.click()
   });
+  downloadPDFButton.addEventListener('click', () => {
+    // let link = OBJ_TEST.export();  // Simuler le clic sur le lien pour télécharger
+    // link.click()
+    OBJ_TEST.toJSONFile()
+  });
+
+  // Let open the modal window wich have buttons to import CSV or PDF
   openBtn.addEventListener("click", () => {
     if(!isImportating){
       modal.style.display = "flex"
     }
   });
+
+  // Let propagate the current displayed tag
   propaBtn.addEventListener("click",()=>{
     console.log(CURR_TAG_NAME)
     cy_graph.nodes().style('background-color', '#9cbeb4');
     lancerPropagation(OBJ_TEST.working_data, CURR_TAG_NAME)
   })
+
+  // Refresh the layout when clicked
   refreshBtn.addEventListener("click",()=>{
     refresh()
   })
+
+  // Creates the actions of the modal window
+  // Here the close modal buttons
   closeBtn.addEventListener("click", () => {
     if(!isImportating){
       modal.style.display = "none"
@@ -1581,14 +1698,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // The importing CSV file button
   fileInput.addEventListener("change", (event) => {
     isImportating = true
-      const file = event.target.files[0]; // Récupérer le fichier sélectionné
+      const file = event.target.files[0]; // Get selected file
       progressBar.style.width = "17%";
       progressBar.innerHTML = "17%"
       if (file && file.type === "text/csv") {
         // modal.style.display = "none"
-        importedCSV = URL.createObjectURL(file); // Générer une URL temporaire du fichier
+        importedCSV = URL.createObjectURL(file); //Create a temporary URL
         console.log("Fichier CSV chargé :", importedCSV, file.name);
         progress.style.display = "flex";
         progressBar.style.display = "flex";
@@ -1606,15 +1724,17 @@ document.addEventListener("DOMContentLoaded", function () {
         })
       } else {
           alert("Veuillez sélectionner un fichier CSV valide !");
-          fileInput.value = ""; // Réinitialiser l'input si le fichier n'est pas un CSV
+          fileInput.value = ""; //Reset input if not CSV file
       }
   });
+  
+  // The importing PDF file button
   pdfInput.addEventListener("change", (event) => {
     isImportating = true
-      const file = event.target.files[0]; // Récupérer le fichier sélectionné
+      const file = event.target.files[0]; // Get selected file
       if (file && file.type === "application/pdf") {
         // modal.style.display = "none"
-        importedPDF = URL.createObjectURL(file); // Générer une URL temporaire du fichier
+        importedPDF = URL.createObjectURL(file); //Create a temporary URL
         console.log("Fichier PDF chargé :", importedPDF, file.name);
         setTimeout(() => {
           OBJ_TEST.import(file.name)
@@ -1622,23 +1742,23 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 100);
       } else {
           alert("Veuillez sélectionner un fichier PDF valide !");
-          fileInput.value = ""; // Réinitialiser l'input si le fichier n'est pas un CSV
+          fileInput.value = ""; //Reset input if not PDF file
       }
   });
 });
 OBJ_TEST = new Data()
 // createGraphe("pirate_des_sept_mers.csv")
 
-// Intervalle permettant de sauvegarder automatiquement le projet
+// Interval letting save the project
 setInterval(() => {
   if(changes_bool){
     changes_bool = false
     localStorage.setItem('autosave', JSON.stringify(OBJ_TEST.toLocalStorage()));
     console.log("Sauvegarde automatique effectuée.")
   }
-}, 5000);
+}, 3000);
 
-// Initialise les données en fonction du cache
+// Init data from cache
 let saved_data;
 try {
   saved_data = JSON.parse(localStorage.getItem('autosave'));
