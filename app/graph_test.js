@@ -214,10 +214,10 @@ class Data{
    * @param {String} filename 
    * @returns 
    */
-  async import(filename){
+  async import(fileURL, filename){
     changes_bool = true
     try {
-      let response = await fetch(filename);
+      let response = await fetch(fileURL);
   
       if (!response.ok) {
         throw new Error(`Erreur: ${response.status}`);
@@ -233,7 +233,7 @@ class Data{
           this.importCSV(text_csv)
           break
         case "pdf":
-          this.entry_pdf_name = filename  
+          this.entry_pdf_name = filename
           this.PDF = importedFile
           this.importPDF()
           break
@@ -1388,7 +1388,7 @@ function newTabOnClick(nodeID) {
  * @param {String} url The csv path from whom the datas will be extracted and displayed as a graph
  * @returns {void}
  */
-async function createGraphe(url=null) {
+async function createGraphe(url=null, nameOfFile=null) {
   if(url){
     if (cy_graph) {
       cy_graph.destroy()
@@ -1404,7 +1404,7 @@ async function createGraphe(url=null) {
   
     // Libérer la mémoire
     CSV_OBJ = {};
-    await OBJ_TEST.import(url)
+    await OBJ_TEST.import(url, nameOfFile)
     console.log(OBJ_TEST.working_data)
     cy_list = await createCyElementsFromDico(OBJ_TEST.working_data)
     console.log(cy_list)
@@ -1701,49 +1701,49 @@ document.addEventListener("DOMContentLoaded", function () {
   // The importing CSV file button
   fileInput.addEventListener("change", (event) => {
     isImportating = true
-      const file = event.target.files[0]; // Get selected file
-      progressBar.style.width = "17%";
-      progressBar.innerHTML = "17%"
-      if (file && file.type === "text/csv") {
-        // modal.style.display = "none"
-        importedCSV = URL.createObjectURL(file); //Create a temporary URL
-        console.log("Fichier CSV chargé :", importedCSV, file.name);
-        progress.style.display = "flex";
-        progressBar.style.display = "flex";
-        createGraphe(file.name).then(()=>{          
-          setTimeout(() => {
-            progressBar.style.width = "89%";
-            progressBar.innerHTML = "89%";
-            cy_graph.on("layoutstop", ()=>{
-              console.log("CSV chargé et graphe mis en place")
-              progressBar.style.width = "100%";
-              progressBar.innerHTML = "100%"
-              isImportating = false
-            })
-          }, 4000);
-        })
-      } else {
-          alert("Veuillez sélectionner un fichier CSV valide !");
-          fileInput.value = ""; //Reset input if not CSV file
-      }
+    const file = event.target.files[0]; // Get selected file
+    progressBar.style.width = "17%";
+    progressBar.innerHTML = "17%"
+    if (file && file.type === "text/csv") {
+      // modal.style.display = "none"
+      importedCSV = URL.createObjectURL(file); //Create a temporary URL
+      console.log("Fichier CSV chargé :", importedCSV, file.name);
+      progress.style.display = "flex";
+      progressBar.style.display = "flex";
+      createGraphe(importedCSV, file.name).then(()=>{          
+        setTimeout(() => {
+          progressBar.style.width = "89%";
+          progressBar.innerHTML = "89%";
+          cy_graph.on("layoutstop", ()=>{
+            console.log("CSV chargé et graphe mis en place")
+            progressBar.style.width = "100%";
+            progressBar.innerHTML = "100%"
+            isImportating = false
+          })
+        }, 4000);
+      })
+    } else {
+        alert("Veuillez sélectionner un fichier CSV valide !");
+        fileInput.value = ""; //Reset input if not CSV file
+    }
   });
   
   // The importing PDF file button
   pdfInput.addEventListener("change", (event) => {
     isImportating = true
-      const file = event.target.files[0]; // Get selected file
-      if (file && file.type === "application/pdf") {
-        // modal.style.display = "none"
-        importedPDF = URL.createObjectURL(file); //Create a temporary URL
-        console.log("Fichier PDF chargé :", importedPDF, file.name);
-        setTimeout(() => {
-          OBJ_TEST.import(file.name)
-          isImportating = false
-        }, 100);
-      } else {
-          alert("Veuillez sélectionner un fichier PDF valide !");
-          fileInput.value = ""; //Reset input if not PDF file
-      }
+    const file = event.target.files[0]; // Get selected file
+    if (file && file.type === "application/pdf") {
+      // modal.style.display = "none"
+      importedPDF = URL.createObjectURL(file); //Create a temporary URL
+      console.log("Fichier PDF chargé :", importedPDF, file.name);
+      setTimeout(() => {
+        OBJ_TEST.import(importedPDF, file.name)
+        isImportating = false
+      }, 100);
+    } else {
+        alert("Veuillez sélectionner un fichier PDF valide !");
+        fileInput.value = ""; //Reset input if not PDF file
+    }
   });
 });
 OBJ_TEST = new Data()
