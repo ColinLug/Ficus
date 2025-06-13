@@ -1471,13 +1471,13 @@ async function createGraphe(url=null, nameOfFile=null) {
       if(SORTIES_INV.includes(String(OBJ_TEST.working_data[key]["to"][i]["sortie"]))){
         switch(String(OBJ_TEST.working_data[key]["to"][i]["sortie"])){
           case 'x':
-            cy_graph.$(`#${key}`).style('background-image','/images/defeat.png')
+            cy_graph.$(`#${key}`).style('background-image','images/defeat.png')
             break;
           case 'v':
-            cy_graph.$(`#${key}`).style('background-image','/images/victory.png')
+            cy_graph.$(`#${key}`).style('background-image','images/victory.png')
             break;
           case 'p':
-            cy_graph.$(`#${key}`).style('background-image','/images/partial_vict.png')
+            cy_graph.$(`#${key}`).style('background-image','images/partial_vict.png')
             break;
         }
       }
