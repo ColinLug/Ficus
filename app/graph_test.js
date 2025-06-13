@@ -1408,12 +1408,12 @@ async function createGraphe(url=null) {
     console.log(OBJ_TEST.working_data)
     cy_list = await createCyElementsFromDico(OBJ_TEST.working_data)
     console.log(cy_list)
-    OBJ_TEST.working_data["162"]["tags"]["biomes"]={"value":"océan","entry":true}
-    OBJ_TEST.working_data["250"]["tags"]["biomes"]={"value":"vallée","entry":true}
-    OBJ_TEST.working_data["87"]["tags"]["biomes"]={"value":"glace","entry":true}
-    OBJ_TEST.working_data["301"]["tags"]["biomes"]={"value":"chemin","entry":true}
-    OBJ_TEST.working_data["402"]["tags"]["biomes"]={"value":"château","entry":true}
-    OBJ_TEST.working_data["53"]["tags"]["biomes"]={"value":"marais","entry":true}
+    // OBJ_TEST.working_data["162"]["tags"]["biomes"]={"value":"océan","entry":true}
+    // OBJ_TEST.working_data["250"]["tags"]["biomes"]={"value":"vallée","entry":true}
+    // OBJ_TEST.working_data["87"]["tags"]["biomes"]={"value":"glace","entry":true}
+    // OBJ_TEST.working_data["301"]["tags"]["biomes"]={"value":"chemin","entry":true}
+    // OBJ_TEST.working_data["402"]["tags"]["biomes"]={"value":"château","entry":true}
+    // OBJ_TEST.working_data["53"]["tags"]["biomes"]={"value":"marais","entry":true}
   }else{
     cy_list = await createCyElementsFromDico(OBJ_TEST.working_data)
   }
